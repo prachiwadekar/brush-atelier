@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum UserRole {
+  ARTIST
+  STUDENT
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MentorshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum ArtworkStatus {
+  IN_PROGRESS
+  COMPLETE
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts          Account[]
+  sessions          Session[]
+  artistProfile     ArtistProfile?
+  studentProfile    StudentProfile?
+  mentorshipRequestsSent MentorshipRequest[] @relation("StudentRequests")
+  mentorshipRequestsReceived MentorshipRequest[] @relation("ArtistRequests")
+  coachingSessions  CoachingSession[]
+}
+
+model ArtistProfile {
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  bio                 String?
+  specialization      String
+  hourlyRate          Float
+  yearsOfExperience   Int?
+  verificationStatus  VerificationStatus @default(PENDING)
+  availableForMentorship Boolean         @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolioItems      PortfolioItem[]
+}
+
+model StudentProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  bio             String?
+  interests       String
+  skillLevel      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolioItems  PortfolioItem[]
+}
+
+model PortfolioItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  thumbnailUrl String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  artistProfileId  String?
+  studentProfileId String?
+  coachingSessionId String? @unique
+
+  artistProfile  ArtistProfile?  @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  coachingSession CoachingSession? @relation(fields: [coachingSessionId], references: [id], onDelete: SetNull)
+}
+
+model MentorshipRequest {
+  id          String            @id @default(cuid())
+  studentId   String
+  artistId    String
+  message     String
+  status      MentorshipStatus  @default(PENDING)
+  proposedStartDate DateTime?
+  sessionsRequested Int?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  student     User              @relation("StudentRequests", fields: [studentId], references: [id], onDelete: Cascade)
+  artist      User              @relation("ArtistRequests", fields: [artistId], references: [id], onDelete: Cascade)
+}
+
+model CoachingSession {
+  id                String         @id @default(cuid())
+  sessionId         String         @unique
+  userId            String
+  imageUrl          String
+  imageMediaType    String
+  medium            String
+  skillLevel        String
+  paintingGuide     String         // JSON string
+  estimatedTime     String?
+  artworkStatus     ArtworkStatus  @default(IN_PROGRESS)
+  currentStep       Int            @default(0)
+  totalSteps        Int            @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatMessages      ChatMessage[]
+  portfolioItem     PortfolioItem?
+}
+
+model ChatMessage {
+  id                String         @id @default(cuid())
+  coachingSessionId String
+  role              String         // 'bot' or 'user'
+  message           String
+  createdAt         DateTime       @default(now())
+
+  coachingSession   CoachingSession @relation(fields: [coachingSessionId], references: [id], onDelete: Cascade)
+}

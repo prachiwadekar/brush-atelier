@@ -185,3 +185,4 @@ This is a private project. For any questions or issues, please contact the devel
 ## License
 
 Proprietary - All rights reserved
+# brush-atelier

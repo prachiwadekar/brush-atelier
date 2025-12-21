@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import Database from "better-sqlite3";
 import { getDbPath } from "./db-config";
 
 const globalForPrisma = globalThis as unknown as {
@@ -13,8 +12,7 @@ function getAdapter() {
     // Use configured database path
     const dbPath = getDbPath();
 
-    const db = new Database(dbPath);
-    globalForPrisma.adapter = new PrismaBetterSqlite3(db);
+    globalForPrisma.adapter = new PrismaBetterSqlite3({ url: dbPath });
   }
   return globalForPrisma.adapter;
 }

@@ -1,26 +1,17 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { getDbPath } from "./db-config";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
-  adapter: any;
 };
 
-function getAdapter() {
-  if (!globalForPrisma.adapter) {
-    // Use configured database path
-    const dbPath = getDbPath();
-
-    globalForPrisma.adapter = new PrismaBetterSqlite3({ url: dbPath });
-  }
-  return globalForPrisma.adapter;
-}
+const connectionString = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL;
 
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter: getAdapter(),
+    adapter: connectionString ? new PrismaPg(new Pool({ connectionString })) : undefined,
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });
 

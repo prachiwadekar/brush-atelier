@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import Anthropic from "@anthropic-ai/sdk";
-import Database from "better-sqlite3";
+import { prisma } from "@/lib/prisma";
 import { randomBytes } from "crypto";
-import { getDbPath } from "@/lib/db-config";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
-
-const DB_PATH = getDbPath();
 
 interface CoachStep {
   step_number: number;
@@ -126,7 +123,6 @@ Return ONLY valid JSON, no other text.`,
       const estimatedTime = await generateEstimatedTime(base64, mimeType, medium, skillLevel);
 
       // Create session in database with all data
-      const db = new Database(DB_PATH);
       const sessionId = randomBytes(16).toString("hex");
 
       // Store complete guide including coaching plan
@@ -135,30 +131,21 @@ Return ONLY valid JSON, no other text.`,
         quickGuide: quickGuide
       };
 
-      db.prepare(`
-        INSERT INTO CoachingSession (
-          id, sessionId, userId, imageUrl, imageMediaType, medium, skillLevel,
-          paintingGuide, estimatedTime, artworkStatus, currentStep, totalSteps,
-          createdAt, updatedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        randomBytes(16).toString("hex"), // id
-        sessionId,
-        session.user.id,
-        imageUrl,
-        mimeType,
-        medium,
-        skillLevel,
-        JSON.stringify(completeGuide),
-        estimatedTime,
-        "IN_PROGRESS",
-        0, // currentStep
-        coachPlan.length,
-        new Date().toISOString(),
-        new Date().toISOString()
-      );
-
-      db.close();
+      await prisma.coachingSession.create({
+        data: {
+          sessionId,
+          userId: session.user.id,
+          imageUrl,
+          imageMediaType: mimeType,
+          medium,
+          skillLevel,
+          paintingGuide: JSON.stringify(completeGuide),
+          estimatedTime,
+          artworkStatus: "IN_PROGRESS",
+          currentStep: 0,
+          totalSteps: coachPlan.length,
+        },
+      });
 
       // Generate first coaching message
       const firstMessage = await getNextCoachingMessage(sessionId, base64, mimeType, medium, skillLevel, coachPlan, 0);
@@ -245,35 +232,34 @@ Return ONLY valid JSON, no other text.`,
       const sessionId = formData.get("session_id") as string;
       const userMessage = formData.get("message") as string;
 
-      const db = new Database(DB_PATH);
-      const coachingSession: any = db.prepare(`
-        SELECT * FROM CoachingSession WHERE sessionId = ?
-      `).get(sessionId);
+      const coachingSession = await prisma.coachingSession.findUnique({
+        where: { sessionId },
+        include: {
+          chatMessages: {
+            select: {
+              role: true,
+              message: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 4,
+          },
+        },
+      });
 
       if (!coachingSession) {
-        db.close();
         return NextResponse.json({ error: "Session not found" }, { status: 404 });
       }
 
       // Save user message
-      db.prepare(`
-        INSERT INTO ChatMessage (id, coachingSessionId, role, message, createdAt)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(
-        randomBytes(16).toString("hex"),
-        coachingSession.id,
-        "user",
-        userMessage,
-        new Date().toISOString()
-      );
-
-      // Get conversation history
-      const messages: any[] = db.prepare(`
-        SELECT role, message FROM ChatMessage
-        WHERE coachingSessionId = ?
-        ORDER BY createdAt DESC
-        LIMIT 4
-      `).all(coachingSession.id);
+      await prisma.chatMessage.create({
+        data: {
+          coachingSessionId: coachingSession.id,
+          role: "user",
+          message: userMessage,
+        },
+      });
 
       const completeGuide = JSON.parse(coachingSession.paintingGuide);
       const coachPlan = completeGuide.coachPlan || completeGuide; // Backward compatibility
@@ -286,7 +272,7 @@ Return ONLY valid JSON, no other text.`,
         coachingSession.skillLevel,
         coachPlan,
         coachingSession.currentStep,
-        messages.reverse(),
+        coachingSession.chatMessages.reverse(),
         userMessage
       );
 
@@ -297,26 +283,20 @@ Return ONLY valid JSON, no other text.`,
       let newStep = coachingSession.currentStep;
       if (shouldAdvance && coachingSession.currentStep < coachPlan.length - 1) {
         newStep++;
-        db.prepare(`
-          UPDATE CoachingSession
-          SET currentStep = ?, updatedAt = ?
-          WHERE sessionId = ?
-        `).run(newStep, new Date().toISOString(), sessionId);
+        await prisma.coachingSession.update({
+          where: { sessionId },
+          data: { currentStep: newStep },
+        });
       }
 
       // Save coach message
-      db.prepare(`
-        INSERT INTO ChatMessage (id, coachingSessionId, role, message, createdAt)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(
-        randomBytes(16).toString("hex"),
-        coachingSession.id,
-        "bot",
-        coachMessage,
-        new Date().toISOString()
-      );
-
-      db.close();
+      await prisma.chatMessage.create({
+        data: {
+          coachingSessionId: coachingSession.id,
+          role: "bot",
+          message: coachMessage,
+        },
+      });
 
       return NextResponse.json({
         message: coachMessage,

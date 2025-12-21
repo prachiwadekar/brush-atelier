@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import Database from "better-sqlite3";
-import { getDbPath } from "@/lib/db-config";
-
-const DB_PATH = getDbPath();
+import { prisma } from "@/lib/prisma";
 
 // Resume a coaching session
 export async function GET(request: NextRequest) {
@@ -20,28 +17,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Session ID required" }, { status: 400 });
     }
 
-    const db = new Database(DB_PATH);
-
-    // Get the coaching session
-    const coachingSession: any = db.prepare(`
-      SELECT * FROM CoachingSession
-      WHERE sessionId = ? AND userId = ?
-    `).get(sessionId, session.user.id);
+    // Get the coaching session with chat history
+    const coachingSession = await prisma.coachingSession.findFirst({
+      where: {
+        sessionId,
+        userId: session.user.id,
+      },
+      include: {
+        chatMessages: {
+          select: {
+            role: true,
+            message: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
 
     if (!coachingSession) {
-      db.close();
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
-
-    // Get chat history
-    const chatMessages: any[] = db.prepare(`
-      SELECT role, message, createdAt
-      FROM ChatMessage
-      WHERE coachingSessionId = ?
-      ORDER BY createdAt ASC
-    `).all(coachingSession.id);
-
-    db.close();
 
     // Parse the painting guide
     const storedGuide = JSON.parse(coachingSession.paintingGuide);
@@ -50,7 +48,7 @@ export async function GET(request: NextRequest) {
     const quickGuide = storedGuide.quickGuide || null;
 
     // Format chat history
-    const chatHistory = chatMessages.map(msg => ({
+    const chatHistory = coachingSession.chatMessages.map(msg => ({
       role: msg.role,
       message: msg.message
     }));

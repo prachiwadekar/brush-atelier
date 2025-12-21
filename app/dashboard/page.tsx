@@ -1,8 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import Database from "better-sqlite3";
 import DashboardClient from "@/components/dashboard/dashboard-client";
-import { getDbPath } from "@/lib/db-config";
+import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -11,37 +10,38 @@ export default async function DashboardPage() {
     redirect("/auth/signin");
   }
 
-  // Use direct database connection to avoid Prisma adapter issues
-  const db = new Database(getDbPath());
-
-  const user: any = db.prepare(`
-    SELECT u.*,
-           sp.id as studentProfileId, sp.skillLevel, sp.interests, sp.bio
-    FROM User u
-    LEFT JOIN StudentProfile sp ON u.id = sp.userId
-    WHERE u.id = ?
-  `).get(session.user.id);
-
-  db.close();
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: {
+      studentProfile: {
+        select: {
+          id: true,
+          skillLevel: true,
+          interests: true,
+          bio: true,
+        },
+      },
+    },
+  });
 
   if (!user) {
     redirect("/auth/signin");
   }
 
   // Check if user has completed onboarding
-  if (!user.studentProfileId) {
+  if (!user.studentProfile) {
     redirect("/onboarding");
   }
 
-  // Reconstruct profile object
+  // Format user object for compatibility with component
   const userWithProfile = {
-    ...user,
-    studentProfile: user.studentProfileId ? {
-      id: user.studentProfileId,
-      skillLevel: user.skillLevel,
-      interests: user.interests,
-      bio: user.bio,
-    } : null,
+    name: user.name || "",
+    studentProfile: {
+      id: user.studentProfile.id,
+      skillLevel: user.studentProfile.skillLevel || "",
+      interests: user.studentProfile.interests,
+      bio: user.studentProfile.bio,
+    },
   };
 
   return <DashboardClient userWithProfile={userWithProfile} />;

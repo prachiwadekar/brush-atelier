@@ -1,16 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import Database from "better-sqlite3";
-import { randomBytes } from "crypto";
-import { getDbPath } from "@/lib/db-config";
-
-// Direct database connection
-const db = new Database(getDbPath());
-
-// Generate a CUID-like ID
-function generateCuid() {
-  return 'c' + randomBytes(12).toString('base64').replace(/[^a-z0-9]/gi, '').substring(0, 24);
-}
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
@@ -24,7 +14,9 @@ export async function POST(req: Request) {
     }
 
     // Check if user already exists
-    const existingUser = db.prepare('SELECT * FROM User WHERE email = ?').get(email);
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
 
     if (existingUser) {
       return NextResponse.json(
@@ -35,24 +27,24 @@ export async function POST(req: Request) {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userId = generateCuid();
-    const now = new Date().toISOString();
     const userName = name || email.split("@")[0];
 
     // Create user
-    const insert = db.prepare(`
-      INSERT INTO User (id, email, password, name, role, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    insert.run(userId, email, hashedPassword, userName, 'STUDENT', now, now);
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name: userName,
+        role: 'STUDENT',
+      },
+    });
 
     return NextResponse.json({
       message: "User created successfully",
       user: {
-        id: userId,
-        email,
-        name: userName,
+        id: user.id,
+        email: user.email,
+        name: user.name,
       },
     });
   } catch (error: any) {

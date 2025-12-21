@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import Database from "better-sqlite3";
-import { getDbPath } from "@/lib/db-config";
-
-const DB_PATH = getDbPath();
+import { prisma } from "@/lib/prisma";
 
 // Mark a coaching session as complete
 export async function POST(request: NextRequest) {
@@ -20,18 +17,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Session ID required" }, { status: 400 });
     }
 
-    const db = new Database(DB_PATH);
-
     // Verify the session belongs to the user and update status
-    const result = db.prepare(`
-      UPDATE CoachingSession
-      SET artworkStatus = 'COMPLETE', updatedAt = ?
-      WHERE sessionId = ? AND userId = ?
-    `).run(new Date().toISOString(), sessionId, session.user.id);
+    const result = await prisma.coachingSession.updateMany({
+      where: {
+        sessionId,
+        userId: session.user.id,
+      },
+      data: {
+        artworkStatus: "COMPLETE",
+      },
+    });
 
-    db.close();
-
-    if (result.changes === 0) {
+    if (result.count === 0) {
       return NextResponse.json({ error: "Session not found or unauthorized" }, { status: 404 });
     }
 

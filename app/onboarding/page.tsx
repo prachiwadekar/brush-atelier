@@ -1,8 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import OnboardingForm from "@/components/onboarding/onboarding-form";
-import Database from "better-sqlite3";
-import { getDbPath } from "@/lib/db-config";
+import { prisma } from "@/lib/prisma";
 
 export default async function OnboardingPage() {
   const session = await auth();
@@ -11,36 +10,25 @@ export default async function OnboardingPage() {
     redirect("/auth/signin");
   }
 
-  // Use direct database connection to avoid Prisma adapter issues
-  const db = new Database(getDbPath());
-
-  const user: any = db.prepare(`
-    SELECT u.*,
-           ap.id as artistProfileId,
-           sp.id as studentProfileId
-    FROM User u
-    LEFT JOIN ArtistProfile ap ON u.id = ap.userId
-    LEFT JOIN StudentProfile sp ON u.id = sp.userId
-    WHERE u.id = ?
-  `).get(session.user.id);
-
-  db.close();
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: {
+      artistProfile: { select: { id: true } },
+      studentProfile: { select: { id: true } },
+    },
+  });
 
   if (!user) {
     redirect("/auth/signin");
   }
 
   // Check if user has already completed onboarding
-  if (user.artistProfileId || user.studentProfileId) {
+  if (user.artistProfile || user.studentProfile) {
     redirect("/dashboard");
   }
 
-  // Reconstruct user object for compatibility
-  const userWithProfiles = {
-    ...user,
-    artistProfile: user.artistProfileId ? { id: user.artistProfileId } : null,
-    studentProfile: user.studentProfileId ? { id: user.studentProfileId } : null,
-  };
+  // User object is already in the correct format with profiles
+  const userWithProfiles = user;
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden flex items-center justify-center px-4">

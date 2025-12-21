@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import Database from "better-sqlite3";
-import { getDbPath } from "@/lib/db-config";
+import { prisma } from "@/lib/prisma";
 
 // Add a portfolio item
 export async function POST(request: NextRequest) {
@@ -21,44 +20,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No image data provided" }, { status: 400 });
     }
 
-    const db = new Database(getDbPath());
+    // Get the student profile
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        studentProfile: {
+          select: { id: true },
+        },
+      },
+    });
 
-    // Get the student profile ID
-    const user: any = db.prepare(`
-      SELECT sp.id as studentProfileId
-      FROM User u
-      LEFT JOIN StudentProfile sp ON u.id = sp.userId
-      WHERE u.id = ?
-    `).get(session.user.id);
-
-    if (!user?.studentProfileId) {
-      db.close();
+    if (!user?.studentProfile) {
       return NextResponse.json({ error: "Student profile not found" }, { status: 404 });
     }
 
-    // Insert portfolio item
-    const portfolioId = `portfolio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const description = medium ? `Created with ${medium}` : null;
 
     // If sessionId provided, get the coaching session ID from database
     let coachingSessionDbId = null;
     if (sessionId) {
-      const coachingSession: any = db.prepare(`
-        SELECT id FROM CoachingSession WHERE sessionId = ?
-      `).get(sessionId);
+      const coachingSession = await prisma.coachingSession.findUnique({
+        where: { sessionId },
+        select: { id: true },
+      });
       coachingSessionDbId = coachingSession?.id || null;
     }
 
-    db.prepare(`
-      INSERT INTO PortfolioItem (id, title, description, imageUrl, studentProfileId, coachingSessionId, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `).run(portfolioId, title, description, imageData, user.studentProfileId, coachingSessionDbId);
-
-    db.close();
+    // Create portfolio item
+    const portfolioItem = await prisma.portfolioItem.create({
+      data: {
+        title,
+        description,
+        imageUrl: imageData,
+        studentProfileId: user.studentProfile.id,
+        coachingSessionId: coachingSessionDbId,
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      portfolioId,
+      portfolioId: portfolioItem.id,
       message: "Added to portfolio successfully!"
     });
   } catch (error: any) {
@@ -78,29 +79,45 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const db = new Database(getDbPath());
-
     // Get portfolio items with coaching session data
-    const portfolioItems = db.prepare(`
-      SELECT
-        p.*,
-        cs.sessionId,
-        cs.medium as sessionMedium,
-        cs.artworkStatus,
-        cs.estimatedTime,
-        cs.currentStep,
-        cs.totalSteps,
-        cs.updatedAt as sessionUpdatedAt
-      FROM PortfolioItem p
-      INNER JOIN StudentProfile sp ON p.studentProfileId = sp.id
-      LEFT JOIN CoachingSession cs ON p.coachingSessionId = cs.id
-      WHERE sp.userId = ?
-      ORDER BY p.createdAt DESC
-    `).all(session.user.id);
+    const portfolioItems = await prisma.portfolioItem.findMany({
+      where: {
+        studentProfile: {
+          userId: session.user.id,
+        },
+      },
+      include: {
+        coachingSession: {
+          select: {
+            sessionId: true,
+            medium: true,
+            artworkStatus: true,
+            estimatedTime: true,
+            currentStep: true,
+            totalSteps: true,
+            updatedAt: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-    db.close();
+    // Format the response to match the expected structure
+    const formattedItems = portfolioItems.map(item => ({
+      ...item,
+      sessionId: item.coachingSession?.sessionId,
+      sessionMedium: item.coachingSession?.medium,
+      artworkStatus: item.coachingSession?.artworkStatus,
+      estimatedTime: item.coachingSession?.estimatedTime,
+      currentStep: item.coachingSession?.currentStep,
+      totalSteps: item.coachingSession?.totalSteps,
+      sessionUpdatedAt: item.coachingSession?.updatedAt,
+      coachingSession: undefined, // Remove nested object to match flat structure
+    }));
 
-    return NextResponse.json({ portfolioItems });
+    return NextResponse.json({ portfolioItems: formattedItems });
   } catch (error: any) {
     console.error("Error fetching portfolio:", error);
     return NextResponse.json(
@@ -125,19 +142,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Portfolio ID required" }, { status: 400 });
     }
 
-    const db = new Database(getDbPath());
-
     // Verify ownership and delete
-    const result = db.prepare(`
-      DELETE FROM PortfolioItem
-      WHERE id = ? AND studentProfileId IN (
-        SELECT id FROM StudentProfile WHERE userId = ?
-      )
-    `).run(portfolioId, session.user.id);
+    const result = await prisma.portfolioItem.deleteMany({
+      where: {
+        id: portfolioId,
+        studentProfile: {
+          userId: session.user.id,
+        },
+      },
+    });
 
-    db.close();
-
-    if (result.changes === 0) {
+    if (result.count === 0) {
       return NextResponse.json({ error: "Portfolio item not found or unauthorized" }, { status: 404 });
     }
 

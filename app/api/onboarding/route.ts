@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import Database from "better-sqlite3";
-import { randomBytes } from "crypto";
-import { getDbPath } from "@/lib/db-config";
-
-// Generate a CUID-like ID
-function generateCuid() {
-  return 'c' + randomBytes(12).toString('base64').replace(/[^a-z0-9]/gi, '').substring(0, 24);
-}
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
@@ -20,49 +13,38 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { role, bio, specialization, hourlyRate, yearsOfExperience, interests, skillLevel } = body;
 
-    const db = new Database(getDbPath());
-    const now = new Date().toISOString();
-
     // Update user role
-    db.prepare('UPDATE User SET role = ?, updatedAt = ? WHERE id = ?')
-      .run(role, now, session.user.id);
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { role },
+    });
 
     if (role === "ARTIST") {
-      const profileId = generateCuid();
       const spec = Array.isArray(specialization) ? specialization.join(", ") : specialization;
 
-      db.prepare(`
-        INSERT INTO ArtistProfile (id, userId, bio, specialization, hourlyRate, yearsOfExperience, verificationStatus, availableForMentorship, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, 'PENDING', 1, ?, ?)
-      `).run(
-        profileId,
-        session.user.id,
-        bio || null,
-        spec,
-        parseFloat(hourlyRate),
-        parseInt(yearsOfExperience) || null,
-        now,
-        now
-      );
+      await prisma.artistProfile.create({
+        data: {
+          userId: session.user.id,
+          bio: bio || null,
+          specialization: spec,
+          hourlyRate: parseFloat(hourlyRate),
+          yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience) : null,
+          verificationStatus: "PENDING",
+          availableForMentorship: true,
+        },
+      });
     } else if (role === "STUDENT") {
-      const profileId = generateCuid();
       const ints = Array.isArray(interests) ? interests.join(", ") : interests;
 
-      db.prepare(`
-        INSERT INTO StudentProfile (id, userId, bio, interests, skillLevel, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        profileId,
-        session.user.id,
-        bio || null,
-        ints,
-        skillLevel || null,
-        now,
-        now
-      );
+      await prisma.studentProfile.create({
+        data: {
+          userId: session.user.id,
+          bio: bio || null,
+          interests: ints,
+          skillLevel: skillLevel || null,
+        },
+      });
     }
-
-    db.close();
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

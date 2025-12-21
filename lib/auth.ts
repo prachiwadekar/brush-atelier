@@ -4,8 +4,6 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
-import Database from "better-sqlite3";
-import { getDbPath } from "./db-config";
 
 const providers = [
   Google({
@@ -23,10 +21,9 @@ const providers = [
         throw new Error("Email and password required");
       }
 
-      // Use direct database connection to avoid Prisma adapter issues
-      const db = new Database(getDbPath());
-      const user: any = db.prepare('SELECT * FROM User WHERE email = ?').get(credentials.email);
-      db.close();
+      const user = await prisma.user.findUnique({
+        where: { email: credentials.email as string },
+      });
 
       if (!user || !user.password) {
         throw new Error("Invalid credentials");
@@ -106,7 +103,7 @@ if (process.env.PINTEREST_CLIENT_ID && process.env.PINTEREST_CLIENT_SECRET) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // adapter: PrismaAdapter(prisma), // Disabled due to Prisma 7 adapter issues
+  // adapter: PrismaAdapter(prisma), // Disabled - using JWT strategy instead
   providers,
   session: {
     strategy: "jwt",
@@ -115,10 +112,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // Use direct database connection to avoid Prisma adapter issues
-        const db = new Database(getDbPath());
-        const dbUser: any = db.prepare('SELECT role FROM User WHERE id = ?').get(user.id);
-        db.close();
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { role: true },
+        });
         if (dbUser) {
           token.role = dbUser.role;
         }

@@ -3,10 +3,15 @@ import "./globals.css";
 import { SessionProvider } from "@/components/providers/session-provider";
 
 export const metadata: Metadata = {
-  title: "Brush Atelier.ai - Your AI Art Coach",
+  title: "Brush Atelier - Your AI Art Coach",
   description: "Get personalized art coaching, real-time feedback, and a custom learning path powered by AI. Master your craft with adaptive skill assessment and progress tracking.",
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: '/logo.png', sizes: 'any' },
+      { url: '/logo.png', sizes: '32x32', type: 'image/png' },
+      { url: '/logo.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: '/logo.png',
   },
 };
 

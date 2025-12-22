@@ -54,7 +54,7 @@ export default function OnboardingForm({ user }: OnboardingFormProps) {
         <input
           required
           type="text"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D1E231] focus:border-transparent text-gray-900"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent text-gray-900"
           placeholder="e.g., Portrait Painting, Landscape, Abstract Art"
           onChange={(e) =>
             setFormData({
@@ -69,7 +69,7 @@ export default function OnboardingForm({ user }: OnboardingFormProps) {
         <label className="block text-sm font-medium text-gray-700 mb-2">Current Skill Level</label>
         <select
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D1E231] focus:border-transparent text-gray-900"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2563EB] focus:border-transparent text-gray-900"
           value={formData.skillLevel}
           onChange={(e) => setFormData({ ...formData, skillLevel: e.target.value })}
         >
@@ -83,7 +83,7 @@ export default function OnboardingForm({ user }: OnboardingFormProps) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-[#D1E231] text-gray-900 px-6 py-3 rounded-full hover:bg-[#C5D629] transition-colors disabled:opacity-50 font-semibold shadow-lg"
+        className="w-full bg-[#2563EB] text-white px-6 py-3 rounded-full hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 font-semibold shadow-lg"
       >
         {isSubmitting ? "Creating profile..." : "Start Your Journey"}
       </button>

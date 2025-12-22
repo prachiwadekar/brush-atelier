@@ -594,8 +594,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
           <div className="bg-white p-8 rounded-xl shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">Get Started</h3>
-                <p className="text-gray-600 mt-1">
+                <h3 className="text-2xl font-bold text-[#1F2933]">Get Started</h3>
+                <p className="text-[#1F2933]/70 mt-1">
                   Chat with your teacher to get personalized step-by-step lessons
                 </p>
               </div>
@@ -604,33 +604,31 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                   <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
                     artworkStatus === "in-progress"
                       ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
-                      : "bg-green-100 text-green-700 border-2 border-green-300"
+                      : "bg-green-100 text-[#6B8E6E] border-2 border-green-300"
                   }`}>
                     {artworkStatus === "in-progress" ? "In Progress" : "Complete"}
-                  </div>
-                )}
-                {estimatedTime && (
-                  <div className="px-4 py-2 rounded-full text-sm font-semibold bg-purple-100 text-purple-700 border-2 border-purple-300 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{estimatedTime}</span>
                   </div>
                 )}
                 {previewUrl && artworkStatus === "in-progress" && (
                   <button
                     onClick={() => setShowCompleteConfirmation(true)}
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-all shadow-sm hover:shadow-md text-sm"
+                    className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition-all shadow-sm hover:shadow-md"
+                    title="Mark as Complete"
                   >
-                    Mark as Complete
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
                   </button>
                 )}
                 {previewUrl && (
                   <button
                     onClick={handleClearImage}
-                    className="bg-[#D1E231] text-gray-900 px-6 py-2 rounded-lg font-semibold hover:bg-[#C5D629] transition-all shadow-sm hover:shadow-md text-sm"
+                    className="bg-[#2563EB] text-white p-2 rounded-lg hover:bg-[#1D4ED8] transition-all shadow-sm hover:shadow-md"
+                    title="Try Another Artwork"
                   >
-                    Try Another Artwork
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
                   </button>
                 )}
               </div>
@@ -641,8 +639,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                 {/* Chatbot - Full Width */}
                 <div className="w-full border-2 border-gray-200 rounded-lg p-6 flex flex-col h-[500px]">
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Your Personal Art Coach</h3>
-                    <p className="text-sm text-gray-600">Ask anything. No judgment. Let's bring this painting to life together.</p>
+                    <h3 className="text-lg font-semibold text-[#1F2933] mb-1">Your Personal Art Coach</h3>
+                    <p className="text-sm text-[#1F2933]/70">Ask anything. No judgment. Let's bring this painting to life together.</p>
                   </div>
 
                   {/* Chat Messages */}
@@ -651,8 +649,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                       <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[80%] px-4 py-2 rounded-lg ${
                           msg.role === 'user'
-                            ? 'bg-[#D1E231] text-gray-900'
-                            : 'bg-gray-200 text-gray-900'
+                            ? 'bg-[#2563EB] text-white'
+                            : 'bg-gray-200 text-[#1F2933]'
                         }`}>
                           <div className="whitespace-pre-wrap text-base">
                             {msg.message}
@@ -674,7 +672,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                           onChange={handleFileChange}
                           className="hidden"
                         />
-                        <svg className="w-5 h-5 text-gray-500 hover:text-[#D1E231] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-[#1F2933]/50 hover:text-[#2563EB] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </label>
@@ -683,12 +681,12 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
                         placeholder="Type your message..."
-                        className="w-full pl-12 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#D1E231] text-gray-900"
+                        className="w-full pl-12 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#2563EB] text-[#1F2933]"
                       />
                     </div>
                     <button
                       type="submit"
-                      className="px-6 py-2 bg-[#D1E231] text-gray-900 rounded-lg font-medium hover:bg-[#C5D629] transition-all"
+                      className="px-6 py-2 bg-[#2563EB] text-white rounded-lg font-medium hover:bg-[#1D4ED8] transition-all"
                     >
                       Send
                     </button>
@@ -710,31 +708,35 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                           className="w-full h-auto max-h-96 object-contain"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                    </div>
+
+                    {/* Secondary Actions - De-emphasized */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <p className="text-xs text-[#1F2933]/50 mb-2 font-medium">After you finish:</p>
+                      <div className="grid grid-cols-2 gap-2">
                         <button
                           onClick={handleAddToPortfolio}
-                          className="bg-[#D1E231] text-gray-900 px-6 py-2 rounded-lg font-semibold hover:bg-[#C5D629] transition-all shadow-sm hover:shadow-md text-sm"
+                          className="bg-gray-100 text-[#1F2933]/70 px-4 py-2 rounded-lg text-xs font-medium hover:bg-[#2563EB] hover:text-white transition-all"
                         >
-                          Add to my Portfolio
+                          Save to Portfolio
                         </button>
                         <button
                           onClick={() => onViewChange("portfolio")}
-                          className="bg-gray-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-900 transition-all shadow-sm hover:shadow-md text-sm"
+                          className="bg-gray-100 text-[#1F2933]/70 px-4 py-2 rounded-lg text-xs font-medium hover:bg-[#1F2933] hover:text-white transition-all"
                         >
-                          Go to My Portfolio
+                          View Portfolio
                         </button>
                       </div>
                       {showAddedMessage && (
-                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-                          <p className="text-sm text-green-800 text-center font-medium">✓ Added to portfolio!</p>
+                        <div className="mt-2 p-2 bg-[#6B8E6E]/10 border border-[#6B8E6E]/30 rounded-lg">
+                          <p className="text-xs text-green-800 text-center font-medium">✓ Added to portfolio!</p>
                         </div>
                       )}
                       {showDuplicateMessage && (
                         <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                          <p className="text-sm text-yellow-800 text-center font-medium">⚠ This painting is already in your portfolio!</p>
+                          <p className="text-xs text-yellow-800 text-center font-medium">⚠ Already in your portfolio!</p>
                         </div>
                       )}
-                    </div>
 
                     {/* Materials Section - Collapsible */}
                     {(() => {
@@ -743,16 +745,26 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                       return null;
                     })()}
                     {paintingGuide && paintingGuide.supplies && (
-                      <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+                      <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border-2 border-[#2563EB]/20 overflow-hidden">
+                        {/* Reassurance Header */}
+                        <div className="bg-gradient-to-r from-green-50 to-blue-50 px-4 py-3 border-b-2 border-[#6B8E6E]/30">
+                          <p className="text-sm text-[#1F2933] font-semibold flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-[#6B8E6E]">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>You don't need exact matches — close substitutes work perfectly.</span>
+                          </p>
+                        </div>
+
                         <button
                           onClick={() => setIsSuppliesOpen(!isSuppliesOpen)}
-                          className="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors"
+                          className="w-full flex items-center justify-between p-4 hover:bg-white/40 transition-colors"
                         >
-                          <h4 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-[#D1E231]">
+                          <h4 className="font-semibold text-[#1F2933] text-sm flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-[#2563EB]">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
                             </svg>
-                            <span>Supplies for this Painting</span>
+                            <span>What You'll Need</span>
                           </h4>
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -760,49 +772,83 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                             viewBox="0 0 24 24"
                             strokeWidth={2.5}
                             stroke="currentColor"
-                            className={`w-5 h-5 text-gray-600 transition-transform ${isSuppliesOpen ? 'rotate-180' : ''}`}
+                            className={`w-5 h-5 text-[#1F2933]/70 transition-transform ${isSuppliesOpen ? 'rotate-180' : ''}`}
                           >
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                           </svg>
                         </button>
 
                         {isSuppliesOpen && (
-                          <div className="p-4 pt-0 space-y-3 border-t border-gray-200">
-                            <div>
-                              <p className="text-xs font-medium text-gray-700 mb-2">Paint Colors:</p>
-                              <div className="flex flex-wrap gap-2">
-                                {paintingGuide.supplies.paintColors.map((color: string, index: number) => (
-                                  <div key={index} className="flex items-center gap-2 bg-white px-2 py-1.5 rounded border border-gray-200">
+                          <div className="p-4 pt-0 space-y-4 border-t border-[#2563EB]/10">
+                            {/* Essential Colors Section */}
+                            <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-[#2563EB]/20">
+                              <div className="flex items-center gap-2 mb-3">
+                                <div className="w-2 h-2 bg-[#2563EB] rounded-full"></div>
+                                <p className="text-xs font-bold text-[#1F2933] uppercase tracking-wide">Essential Colors</p>
+                              </div>
+                              <div className="space-y-2">
+                                {paintingGuide.supplies.paintColors.slice(0, 3).map((color: string, index: number) => (
+                                  <div key={index} className="flex items-start gap-3 bg-white px-3 py-2 rounded-lg border border-gray-200">
                                     <div
-                                      className="w-4 h-4 rounded border border-gray-300 flex-shrink-0"
+                                      className="w-6 h-6 rounded-md border-2 border-gray-300 flex-shrink-0 shadow-sm mt-0.5"
                                       style={{ backgroundColor: getColorHex(color) }}
                                       title={color}
                                     />
-                                    <span className="text-xs text-gray-700">{color}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <span className="text-xs font-semibold text-[#1F2933] block">{color}</span>
+                                      <span className="text-xs text-[#1F2933]/60 italic">
+                                        {index === 0 && "For highlights & mixing"}
+                                        {index === 1 && "For depth & shadows"}
+                                        {index === 2 && "For color balance"}
+                                      </span>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
                             </div>
 
+                            {/* Additional Colors - Collapsed by default */}
+                            {paintingGuide.supplies.paintColors.length > 3 && (
+                              <div className="bg-white/40 rounded-lg p-3 border border-gray-200">
+                                <p className="text-xs font-medium text-[#1F2933]/70 mb-2">Additional Colors (you'll need these later):</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {paintingGuide.supplies.paintColors.slice(3).map((color: string, index: number) => (
+                                    <div key={index} className="flex items-center gap-2 bg-white px-2 py-1.5 rounded border border-gray-200">
+                                      <div
+                                        className="w-4 h-4 rounded border border-gray-300 flex-shrink-0"
+                                        style={{ backgroundColor: getColorHex(color) }}
+                                        title={color}
+                                      />
+                                      <span className="text-xs text-[#1F2933]">{color}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Brushes */}
                             <div>
-                              <p className="text-xs font-medium text-gray-700 mb-1">Brushes:</p>
-                              <p className="text-xs text-gray-600 leading-relaxed">
+                              <p className="text-xs font-medium text-[#1F2933] mb-2 flex items-center gap-2">
+                                <span>Brushes:</span>
+                                <span className="text-[#1F2933]/50 font-normal italic">(any similar sizes work fine)</span>
+                              </p>
+                              <p className="text-xs text-[#1F2933]/70 leading-relaxed bg-white/60 p-2 rounded">
                                 {paintingGuide.supplies.brushes.join(', ')}
                               </p>
                             </div>
 
                             {paintingGuide.supplies.palette && paintingGuide.supplies.palette.length > 0 && (
                               <div>
-                                <p className="text-xs font-medium text-gray-700 mb-1">Palette & Mixing:</p>
-                                <p className="text-xs text-gray-600 leading-relaxed">
+                                <p className="text-xs font-medium text-[#1F2933] mb-1">Palette & Mixing:</p>
+                                <p className="text-xs text-[#1F2933]/70 leading-relaxed bg-white/60 p-2 rounded">
                                   {paintingGuide.supplies.palette.join(', ')}
                                 </p>
                               </div>
                             )}
 
                             <div>
-                              <p className="text-xs font-medium text-gray-700 mb-1">Other Materials:</p>
-                              <p className="text-xs text-gray-600 leading-relaxed">
+                              <p className="text-xs font-medium text-[#1F2933] mb-1">Other Materials:</p>
+                              <p className="text-xs text-[#1F2933]/70 leading-relaxed bg-white/60 p-2 rounded">
                                 {paintingGuide.supplies.otherMaterials.join(', ')}
                               </p>
                             </div>
@@ -814,7 +860,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                     {/* Product Links Modal */}
                     {showProductLinksModal && paintingGuide?.productLinks && (
                       <div
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        className="fixed inset-0 bg-[#FBF7F2]/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
                         onClick={() => setShowProductLinksModal(false)}
                       >
                         <div
@@ -822,19 +868,19 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                           onClick={(e) => e.stopPropagation()}
                         >
                           {/* Modal Header */}
-                          <div className="sticky top-0 bg-gradient-to-r from-[#D1E231] to-[#C5D629] px-6 py-4 border-b border-gray-200">
+                          <div className="sticky top-0 bg-gradient-to-r from-[#2563EB] to-[#C5D629] px-6 py-4 border-b border-gray-200">
                             <div className="flex items-center justify-between">
-                              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                              <h3 className="text-lg font-bold text-[#1F2933] flex items-center gap-2">
                                 🛒 Recommended Supplies
                               </h3>
                               <button
                                 onClick={() => setShowProductLinksModal(false)}
-                                className="text-gray-700 hover:text-gray-900 transition-colors text-2xl leading-none"
+                                className="text-[#1F2933] hover:text-[#1F2933] transition-colors text-2xl leading-none"
                               >
                                 ×
                               </button>
                             </div>
-                            <p className="text-xs text-gray-700 mt-1">
+                            <p className="text-xs text-[#1F2933] mt-1">
                               High-quality products to help you create this artwork
                             </p>
                           </div>
@@ -848,16 +894,16 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                   href={product.amazonUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="block bg-gray-50 rounded-lg p-4 hover:shadow-md hover:bg-white transition-all border border-gray-200 hover:border-[#D1E231]"
+                                  className="block bg-gray-50 rounded-lg p-4 hover:shadow-md hover:bg-white transition-all border border-gray-200 hover:border-[#2563EB]"
                                 >
                                   <div className="flex items-center justify-between">
                                     <div className="flex-1">
-                                      <p className="text-sm font-semibold text-gray-900 mb-1">{product.name}</p>
-                                      <p className="text-xs text-gray-600 capitalize">
+                                      <p className="text-sm font-semibold text-[#1F2933] mb-1">{product.name}</p>
+                                      <p className="text-xs text-[#1F2933]/70 capitalize">
                                         {product.category.replace(/([A-Z])/g, ' $1').trim()}
                                       </p>
                                     </div>
-                                    <div className="ml-4 flex items-center gap-1 text-[#D1E231] font-semibold text-sm">
+                                    <div className="ml-4 flex items-center gap-1 text-[#2563EB] font-semibold text-sm">
                                       View <span className="text-lg">→</span>
                                     </div>
                                   </div>
@@ -867,7 +913,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
                             {/* Affiliate Disclosure */}
                             <div className="mt-6 pt-4 border-t border-gray-200">
-                              <p className="text-xs text-gray-500 italic leading-relaxed">
+                              <p className="text-xs text-[#1F2933]/50 italic leading-relaxed">
                                 * These are affiliate links. Purchasing through them supports Brush Atelier at no extra cost to you. We only recommend products we believe will help you create great art.
                               </p>
                             </div>
@@ -879,42 +925,139 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                     {isAnalyzing && (
                       <div className="mt-6">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700">Analyzing your artwork...</span>
-                          <span className="text-sm font-medium text-gray-700">{Math.round(progress)}%</span>
+                          <span className="text-sm font-medium text-[#1F2933]">Analyzing your artwork...</span>
+                          <span className="text-sm font-medium text-[#1F2933]">{Math.round(progress)}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                           <div
-                            className="bg-[#D1E231] h-3 rounded-full transition-all duration-500 ease-out"
+                            className="bg-[#2563EB] h-3 rounded-full transition-all duration-500 ease-out"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
-                        <p className="text-xs text-gray-500 mt-2 text-center">This may take a moment while our AI analyzes the details...</p>
+                        <p className="text-xs text-[#1F2933]/50 mt-2 text-center">This may take a moment while our AI analyzes the details...</p>
                       </div>
                     )}
                   </div>
+                </div>
 
                 {/* Right Column - Chatbot */}
                 <div className="border-2 border-gray-200 rounded-lg p-4 flex flex-col h-[600px]">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Your Personal Art Coach</h3>
-                    <p className="text-sm text-gray-600">Ask anything. No judgment. Let's bring this painting to life together.</p>
+                  {/* Primary Next Action CTA */}
+                  <div className="mb-4 bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] rounded-xl p-5 shadow-lg border-2 border-[#2563EB]">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-2xl font-bold text-[#2563EB]">1</span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-white mb-1">Your Next Step</h3>
+                        <p className="text-white/90 text-sm leading-relaxed">
+                          Start by observing the artwork. Ask your coach anything about colors, techniques, or where to begin.
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Chat Messages */}
-                  <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-                    {chatMessages.map((msg, index) => (
-                      <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] px-4 py-2 rounded-lg ${
-                          msg.role === 'user'
-                            ? 'bg-[#D1E231] text-gray-900'
-                            : 'bg-gray-200 text-gray-900'
-                        }`}>
-                          <div className="whitespace-pre-wrap text-base">
-                            {msg.message}
+                  <div className="mb-3">
+                    <h4 className="text-sm font-semibold text-[#1F2933] mb-1">Guided Studio Session</h4>
+                    <p className="text-xs text-[#1F2933]/60">A real coaching experience—not just chat.</p>
+                  </div>
+
+                  {/* Chat Messages - Guided Studio Session */}
+                  <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+                    {chatMessages.map((msg, index) => {
+                      // Detect message type based on content patterns
+                      const isActionStep = msg.role === 'bot' && (
+                        msg.message.toLowerCase().includes('step') ||
+                        msg.message.toLowerCase().includes('action:') ||
+                        msg.message.toLowerCase().includes('now,') ||
+                        msg.message.toLowerCase().includes('let\'s')
+                      );
+
+                      const isCoachInsight = msg.role === 'bot' && (
+                        msg.message.toLowerCase().includes('notice') ||
+                        msg.message.toLowerCase().includes('observe') ||
+                        msg.message.toLowerCase().includes('tip:') ||
+                        msg.message.toLowerCase().includes('remember')
+                      );
+
+                      if (msg.role === 'user') {
+                        // User Reflection - Handwritten feel
+                        return (
+                          <div key={index} className="flex justify-end">
+                            <div className="max-w-[80%]">
+                              <div className="flex items-center gap-2 justify-end mb-1">
+                                <span className="text-xs text-[#1F2933]/50 font-medium">Your Reflection</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-[#C2410C]">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                </svg>
+                              </div>
+                              <div className="bg-gradient-to-br from-blue-50 to-purple-50 text-[#1F2933] px-4 py-3 rounded-2xl rounded-tr-sm border-2 border-[#2563EB]/20 shadow-sm">
+                                <div className="whitespace-pre-wrap text-sm italic leading-relaxed">
+                                  {msg.message}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    ))}
+                        );
+                      } else if (isActionStep) {
+                        // Action Step - Clear instruction
+                        return (
+                          <div key={index} className="flex justify-start">
+                            <div className="max-w-[85%]">
+                              <div className="flex items-center gap-2 mb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-[#6B8E6E]">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span className="text-xs font-bold text-[#6B8E6E] uppercase tracking-wide">Action Step</span>
+                              </div>
+                              <div className="bg-gradient-to-r from-green-50 to-emerald-50 text-[#1F2933] px-5 py-4 rounded-2xl rounded-tl-sm border-2 border-[#6B8E6E]/30 shadow-md">
+                                <div className="whitespace-pre-wrap text-sm font-medium leading-relaxed">
+                                  {msg.message}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      } else if (isCoachInsight) {
+                        // Coach Insight - Observational guidance
+                        return (
+                          <div key={index} className="flex justify-start">
+                            <div className="max-w-[85%]">
+                              <div className="flex items-center gap-2 mb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-[#C2410C]">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+                                </svg>
+                                <span className="text-xs font-bold text-[#C2410C] uppercase tracking-wide">Coach Insight</span>
+                              </div>
+                              <div className="bg-gradient-to-br from-orange-50 to-amber-50 text-[#1F2933] px-5 py-4 rounded-2xl rounded-tl-sm border-2 border-[#C2410C]/20 shadow-md">
+                                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                  {msg.message}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        // Default Coach Message
+                        return (
+                          <div key={index} className="flex justify-start">
+                            <div className="max-w-[85%]">
+                              <div className="flex items-center gap-2 mb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-[#2563EB]">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                                </svg>
+                                <span className="text-xs text-[#1F2933]/60 font-medium">Your Coach</span>
+                              </div>
+                              <div className="bg-white text-[#1F2933] px-4 py-3 rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm">
+                                <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                                  {msg.message}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                    })}
 
                     {/* Medium Selection Buttons */}
                     {showMediumButtons && (
@@ -922,25 +1065,25 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         <div className="grid grid-cols-2 gap-2 w-full max-w-md">
                           <button
                             onClick={() => handleMediumSelection('Watercolor')}
-                            className="bg-[#D1E231] text-gray-900 px-4 py-3 rounded-lg font-semibold hover:bg-[#C5D629] transition-all shadow-sm hover:shadow-md text-sm"
+                            className="bg-[#2563EB] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#1D4ED8] transition-all shadow-sm hover:shadow-md text-sm"
                           >
                             Watercolor
                           </button>
                           <button
                             onClick={() => handleMediumSelection('Acrylic')}
-                            className="bg-[#D1E231] text-gray-900 px-4 py-3 rounded-lg font-semibold hover:bg-[#C5D629] transition-all shadow-sm hover:shadow-md text-sm"
+                            className="bg-[#2563EB] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#1D4ED8] transition-all shadow-sm hover:shadow-md text-sm"
                           >
                             Acrylic
                           </button>
                           <button
                             onClick={() => handleMediumSelection('Oil Paints')}
-                            className="bg-[#D1E231] text-gray-900 px-4 py-3 rounded-lg font-semibold hover:bg-[#C5D629] transition-all shadow-sm hover:shadow-md text-sm"
+                            className="bg-[#2563EB] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#1D4ED8] transition-all shadow-sm hover:shadow-md text-sm"
                           >
                             Oil Paints
                           </button>
                           <button
                             onClick={() => handleMediumSelection('recommend')}
-                            className="bg-gray-200 text-gray-900 px-4 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all shadow-sm hover:shadow-md text-sm"
+                            className="bg-gray-200 text-[#1F2933] px-4 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all shadow-sm hover:shadow-md text-sm"
                           >
                             I don't know
                           </button>
@@ -954,11 +1097,11 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                   {/* Loading State */}
                   {isAnalyzing && (
                     <div className="mb-4 flex items-center justify-center gap-3 px-6 py-3">
-                      <svg className="animate-spin h-5 w-5 text-gray-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-5 w-5 text-[#1F2933]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <span className="text-sm font-medium text-gray-700">Creating Your Painting Plan...</span>
+                      <span className="text-sm font-medium text-[#1F2933]">Creating Your Painting Plan...</span>
                     </div>
                   )}
 
@@ -970,11 +1113,11 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
                         placeholder="Type your message..."
-                        className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#D1E231] text-gray-900"
+                        className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#2563EB] text-[#1F2933]"
                       />
                       <button
                         type="submit"
-                        className="px-6 py-2 bg-[#D1E231] text-gray-900 rounded-lg font-medium hover:bg-[#C5D629] transition-all"
+                        className="px-6 py-2 bg-[#2563EB] text-white rounded-lg font-medium hover:bg-[#1D4ED8] transition-all"
                       >
                         Send
                       </button>
@@ -989,26 +1132,26 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                 </div>
               )}
             </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
         {activeView === "portfolio" && (
           <div>
             <div className="bg-white p-8 rounded-xl shadow-sm">
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">My Portfolio</h3>
+                <h3 className="text-2xl font-bold text-[#1F2933]">My Portfolio</h3>
               </div>
 
               {isLoadingPortfolio ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-600">Loading your portfolio...</p>
+                  <p className="text-[#1F2933]/70">Loading your portfolio...</p>
                 </div>
               ) : portfolioItems.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🎨</div>
-                  <p className="text-gray-600 mb-2">Your portfolio is empty</p>
-                  <p className="text-sm text-gray-500">Create some artwork in the "New Artwork" tab and add them to your portfolio!</p>
+                  <p className="text-[#1F2933]/70 mb-2">Your portfolio is empty</p>
+                  <p className="text-sm text-[#1F2933]/50">Create some artwork in the "New Artwork" tab and add them to your portfolio!</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1023,9 +1166,9 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         />
                       </div>
                       <div className="p-4">
-                        <h4 className="font-semibold text-gray-900 mb-1">{item.title}</h4>
+                        <h4 className="font-semibold text-[#1F2933] mb-1">{item.title}</h4>
                         {item.description && (
-                          <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                          <p className="text-sm text-[#1F2933]/70 mb-2">{item.description}</p>
                         )}
 
                         {/* Show session info if exists */}
@@ -1035,12 +1178,12 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                               <span className={`text-xs px-2 py-1 rounded-full ${
                                 item.artworkStatus === 'IN_PROGRESS'
                                   ? 'bg-blue-100 text-blue-700'
-                                  : 'bg-green-100 text-green-700'
+                                  : 'bg-green-100 text-[#6B8E6E]'
                               }`}>
                                 {item.artworkStatus === 'IN_PROGRESS' ? 'In Progress' : 'Complete'}
                               </span>
                               {item.estimatedTime && (
-                                <span className="text-xs text-gray-500">{item.estimatedTime}</span>
+                                <span className="text-xs text-[#1F2933]/50">{item.estimatedTime}</span>
                               )}
                             </div>
                             {item.artworkStatus === 'IN_PROGRESS' && (
@@ -1050,7 +1193,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                   e.stopPropagation();
                                   handleResumeSession(item.sessionId, item.imageUrl);
                                 }}
-                                className="w-full bg-[#D1E231] hover:bg-[#c1d220] text-gray-900 font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+                                className="w-full bg-[#2563EB] hover:bg-[#c1d220] text-[#1F2933] font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
                                 type="button"
                               >
                                 Resume Session
@@ -1060,7 +1203,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         )}
 
                         <div className="flex items-center justify-between">
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-[#1F2933]/50">
                             {new Date(item.createdAt).toLocaleDateString()}
                           </p>
                           <button
@@ -1090,7 +1233,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
       {/* Complete Confirmation Modal */}
       {showCompleteConfirmation && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-[#FBF7F2]/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setShowCompleteConfirmation(false)}
         >
           <div
@@ -1098,8 +1241,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Mark as Complete?</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-bold text-[#1F2933] mb-2">Mark as Complete?</h3>
+              <p className="text-[#1F2933]/70">
                 Are you finished with this artwork? This will mark your session as complete.
               </p>
             </div>
@@ -1107,13 +1250,13 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowCompleteConfirmation(false)}
-                className="px-6 py-2.5 rounded-lg font-medium text-gray-700 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all"
+                className="px-6 py-2.5 rounded-lg font-medium text-[#1F2933] border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all"
               >
                 Not Yet
               </button>
               <button
                 onClick={handleMarkAsComplete}
-                className="px-6 py-2.5 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 transition-all shadow-sm"
+                className="px-6 py-2.5 rounded-lg font-semibold text-[#1F2933] bg-green-600 hover:bg-green-700 transition-all shadow-sm"
               >
                 Yes, I'm Done!
               </button>
@@ -1125,7 +1268,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
       {/* Delete Confirmation Modal */}
       {showDeleteConfirmModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-[#FBF7F2]/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={handleCancelDelete}
         >
           <div
@@ -1133,8 +1276,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Artwork?</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-bold text-[#1F2933] mb-2">Delete Artwork?</h3>
+              <p className="text-[#1F2933]/70">
                 Are you sure you want to delete this artwork from your portfolio? This action cannot be undone.
               </p>
             </div>
@@ -1142,13 +1285,13 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleCancelDelete}
-                className="px-6 py-2.5 rounded-lg font-medium text-gray-700 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all"
+                className="px-6 py-2.5 rounded-lg font-medium text-[#1F2933] border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="px-6 py-2.5 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all shadow-sm"
+                className="px-6 py-2.5 rounded-lg font-semibold text-[#1F2933] bg-red-600 hover:bg-red-700 transition-all shadow-sm"
               >
                 Delete
               </button>

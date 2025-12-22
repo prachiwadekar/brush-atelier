@@ -53,10 +53,10 @@ export default function ImportPortfolio() {
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+      <h3 className="text-lg font-semibold text-[#1F2933] mb-4">
         Import from Social Media
       </h3>
-      <p className="text-gray-600 text-sm mb-4">
+      <p className="text-[#1F2933]/70 text-sm mb-4">
         Quickly build your portfolio by importing your artwork from Instagram or Pinterest
       </p>
 
@@ -88,7 +88,7 @@ export default function ImportPortfolio() {
         )}
 
         {!hasInstagram && !hasPinterest && (
-          <p className="text-gray-500 text-sm text-center py-4">
+          <p className="text-[#1F2933]/50 text-sm text-center py-4">
             Sign in with Instagram or Pinterest to import your portfolio
           </p>
         )}
@@ -98,7 +98,7 @@ export default function ImportPortfolio() {
         <div
           className={`mt-4 p-4 rounded-lg ${
             importResult.success
-              ? "bg-green-50 text-green-800"
+              ? "bg-[#6B8E6E]/10 text-[#6B8E6E]"
               : "bg-red-50 text-red-800"
           }`}
         >

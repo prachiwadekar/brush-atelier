@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/session-provider";
+import { AnalyticsProvider } from "@/components/providers/analytics-provider";
 
 export const metadata: Metadata = {
   title: "Brush Atelier - Your AI Art Coach",
@@ -60,7 +61,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased touch-manipulation">
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <AnalyticsProvider>
+            {children}
+          </AnalyticsProvider>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -105,17 +105,37 @@ export async function GET(request: NextRequest) {
     });
 
     // Format the response to match the expected structure
-    const formattedItems = portfolioItems.map(item => ({
-      ...item,
-      sessionId: item.coachingSession?.sessionId,
-      sessionMedium: item.coachingSession?.medium,
-      artworkStatus: item.coachingSession?.artworkStatus,
-      estimatedTime: item.coachingSession?.estimatedTime,
-      currentStep: item.coachingSession?.currentStep,
-      totalSteps: item.coachingSession?.totalSteps,
-      sessionUpdatedAt: item.coachingSession?.updatedAt,
-      coachingSession: undefined, // Remove nested object to match flat structure
-    }));
+    const formattedItems = portfolioItems.map(item => {
+      console.log('Portfolio item:', {
+        id: item.id,
+        title: item.title,
+        hasCoachingSession: !!item.coachingSession,
+        coachingSessionId: item.coachingSessionId,
+        sessionData: item.coachingSession ? {
+          sessionId: item.coachingSession.sessionId,
+          artworkStatus: item.coachingSession.artworkStatus,
+          medium: item.coachingSession.medium
+        } : null
+      });
+
+      return {
+        ...item,
+        sessionId: item.coachingSession?.sessionId,
+        sessionMedium: item.coachingSession?.medium,
+        artworkStatus: item.coachingSession?.artworkStatus?.toLowerCase().replace('_', '-'),
+        estimatedTime: item.coachingSession?.estimatedTime,
+        currentStep: item.coachingSession?.currentStep,
+        totalSteps: item.coachingSession?.totalSteps,
+        sessionUpdatedAt: item.coachingSession?.updatedAt,
+        coachingSession: undefined, // Remove nested object to match flat structure
+      };
+    });
+
+    console.log('Returning formatted items:', formattedItems.map(i => ({
+      id: i.id,
+      sessionId: i.sessionId,
+      artworkStatus: i.artworkStatus
+    })));
 
     return NextResponse.json({ portfolioItems: formattedItems });
   } catch (error: any) {
@@ -142,19 +162,39 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Portfolio ID required" }, { status: 400 });
     }
 
-    // Verify ownership and delete
-    const result = await prisma.portfolioItem.deleteMany({
+    // First, get the portfolio item to check ownership and get the coaching session ID
+    const portfolioItem = await prisma.portfolioItem.findFirst({
       where: {
         id: portfolioId,
         studentProfile: {
           userId: session.user.id,
         },
       },
+      select: {
+        id: true,
+        coachingSessionId: true,
+      },
     });
 
-    if (result.count === 0) {
+    if (!portfolioItem) {
       return NextResponse.json({ error: "Portfolio item not found or unauthorized" }, { status: 404 });
     }
+
+    // Delete the coaching session and its chat messages if it exists
+    if (portfolioItem.coachingSessionId) {
+      await prisma.coachingSession.delete({
+        where: {
+          id: portfolioItem.coachingSessionId,
+        },
+      });
+    }
+
+    // Delete the portfolio item
+    await prisma.portfolioItem.delete({
+      where: {
+        id: portfolioId,
+      },
+    });
 
     return NextResponse.json({ success: true, message: "Deleted successfully" });
   } catch (error: any) {

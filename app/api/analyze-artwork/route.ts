@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(request: NextRequest) {
@@ -109,13 +109,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call Claude with vision capabilities
-    console.log("=== CALLING CLAUDE API ===");
-    console.log("Model: claude-sonnet-4-20250514");
+    // Use GPT-4o for vision analysis
+    console.log("=== CALLING GPT-4o FOR IMAGE ANALYSIS ===");
     const apiStartTime = Date.now();
 
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
       max_tokens: 3000,
       messages: [
         {
@@ -156,19 +155,23 @@ Your analysis should include:
 
 Be specific, practical, and encouraging. Assume the reader wants to learn how to create something similar.`,
             },
-            imageContent,
+            {
+              type: "image_url",
+              image_url: {
+                url: imageContent.type === "image"
+                  ? `data:${imageContent.source.media_type};base64,${imageContent.source.data}`
+                  : imageContent.image_url?.url || "",
+              },
+            },
           ],
         },
       ],
     });
 
     const apiEndTime = Date.now();
-    console.log(`=== CLAUDE API RESPONSE RECEIVED (${apiEndTime - apiStartTime}ms) ===`);
-    console.log("Response content type:", response.content[0]?.type);
+    console.log(`=== GPT-4o RESPONSE RECEIVED (${apiEndTime - apiStartTime}ms) ===`);
 
-    const analysis = response.content[0]?.type === "text"
-      ? response.content[0].text
-      : "Unable to analyze the artwork.";
+    const analysis = response.choices[0]?.message?.content || "Unable to analyze the artwork.";
 
     console.log("Analysis length:", analysis.length, "characters");
     console.log("=== RETURNING SUCCESS ===");

@@ -55,7 +55,7 @@ export default function SignInPage() {
               key="logo-v2"
               unoptimized
             />
-            <h1 className="text-3xl font-bold" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+            <h1 className="text-3xl font-bold">
               <span className="text-[#C2410C]">Brush</span>{" "}
               <span className="text-[#1F2933]">Atelier</span>
             </h1>

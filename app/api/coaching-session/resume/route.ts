@@ -44,8 +44,26 @@ export async function GET(request: NextRequest) {
     // Parse the painting guide
     const storedGuide = JSON.parse(coachingSession.paintingGuide);
 
-    // Extract the quick guide (supports both old and new format)
-    const quickGuide = storedGuide.quickGuide || null;
+    console.log('=== RESUME ENDPOINT DEBUG ===');
+    console.log('storedGuide keys:', Object.keys(storedGuide));
+    console.log('storedGuide.coachPlan length:', storedGuide.coachPlan?.length);
+    console.log('storedGuide.quickGuide:', storedGuide.quickGuide ? 'exists' : 'does not exist');
+    console.log('Full storedGuide:', JSON.stringify(storedGuide, null, 2));
+
+    // Support both old and new format
+    // New format: { coachPlan: [...], quickGuide: {...} }
+    // Old format might just be the quick guide itself
+    let paintingGuide;
+    if (storedGuide.quickGuide) {
+      // New format - return complete guide with both coachPlan and quickGuide
+      paintingGuide = storedGuide;
+    } else {
+      // Old format - wrap in quickGuide property
+      paintingGuide = { quickGuide: storedGuide };
+    }
+
+    console.log('Final paintingGuide keys:', Object.keys(paintingGuide));
+    console.log('Final paintingGuide.coachPlan length:', paintingGuide.coachPlan?.length);
 
     // Format chat history
     const chatHistory = coachingSession.chatMessages.map(msg => ({
@@ -57,7 +75,7 @@ export async function GET(request: NextRequest) {
       sessionId: coachingSession.sessionId,
       medium: coachingSession.medium,
       skillLevel: coachingSession.skillLevel,
-      paintingGuide: quickGuide,
+      paintingGuide: paintingGuide,
       estimatedTime: coachingSession.estimatedTime,
       artworkStatus: coachingSession.artworkStatus.toLowerCase().replace('_', '-'),
       currentStep: coachingSession.currentStep,

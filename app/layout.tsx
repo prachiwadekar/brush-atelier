@@ -59,6 +59,16 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Playfair+Display:wght@700&display=swap"
           rel="stylesheet"
         />
+        {process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY && (
+          <>
+            <script src={`https://cdn.amplitude.com/script/${process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY}.js`}></script>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.amplitude.add(window.sessionReplay.plugin({sampleRate: 1}));window.amplitude.init('${process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY}', {"fetchRemoteConfig":true,"autocapture":{"attribution":true,"fileDownloads":true,"formInteractions":true,"pageViews":true,"sessions":true,"elementInteractions":true,"networkTracking":true,"webVitals":true,"frustrationInteractions":true}});`,
+              }}
+            />
+          </>
+        )}
       </head>
       <body className="font-sans antialiased touch-manipulation">
         <SessionProvider>

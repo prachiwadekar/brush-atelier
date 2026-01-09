@@ -1,57 +1,58 @@
-import posthog from 'posthog-js';
-
-// Initialize PostHog
-export const initPostHog = () => {
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
-      autocapture: true, // Auto-capture clicks, page views, etc.
-      capture_pageview: true,
-      capture_pageleave: true,
-      persistence: 'localStorage',
-      loaded: (posthog) => {
-        if (process.env.NODE_ENV === 'development') {
-          posthog.debug();
-        }
-      },
-    });
+// Type definitions for Amplitude window object
+declare global {
+  interface Window {
+    amplitude?: {
+      track: (eventName: string, properties?: Record<string, any>) => void;
+      setUserId: (userId: string) => void;
+      identify: (identifyObj: any) => void;
+      reset: () => void;
+      Identify: new () => any;
+    };
   }
+}
+
+// Helper to check if Amplitude is loaded
+const isAmplitudeLoaded = (): boolean => {
+  return typeof window !== 'undefined' && !!window.amplitude;
 };
 
 // Identify user
 export const identifyUser = (userId: string, traits?: Record<string, any>) => {
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    posthog.identify(userId, traits);
+  if (!isAmplitudeLoaded()) return;
+
+  const identifyEvent = new window.amplitude!.Identify();
+
+  if (traits) {
+    Object.entries(traits).forEach(([key, value]) => {
+      identifyEvent.set(key, value);
+    });
   }
+
+  window.amplitude!.setUserId(userId);
+  window.amplitude!.identify(identifyEvent);
 };
 
 // Track events
 export const trackEvent = (eventName: string, properties?: Record<string, any>) => {
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    posthog.capture(eventName, properties);
-  }
+  if (!isAmplitudeLoaded()) return;
+  window.amplitude!.track(eventName, properties);
 };
 
 // Set user properties
 export const setUserProperties = (properties: Record<string, any>) => {
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    posthog.people.set(properties);
-  }
+  if (!isAmplitudeLoaded()) return;
+
+  const identifyEvent = new window.amplitude!.Identify();
+  Object.entries(properties).forEach(([key, value]) => {
+    identifyEvent.set(key, value);
+  });
+  window.amplitude!.identify(identifyEvent);
 };
 
 // Reset on logout
 export const resetAnalytics = () => {
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    posthog.reset();
-  }
-};
-
-// Create feature flag
-export const isFeatureEnabled = (flagKey: string): boolean => {
-  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    return posthog.isFeatureEnabled(flagKey) || false;
-  }
-  return false;
+  if (!isAmplitudeLoaded()) return;
+  window.amplitude!.reset();
 };
 
 // Predefined event tracking functions

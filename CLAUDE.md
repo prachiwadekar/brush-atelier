@@ -83,6 +83,9 @@ DATABASE_URL=postgresql://...
 NEXTAUTH_URL=http://localhost:3000  # or production URL
 NEXTAUTH_SECRET=...                 # openssl rand -base64 32
 
+# Analytics (see AMPLITUDE_SETUP.md)
+NEXT_PUBLIC_AMPLITUDE_API_KEY=...   # Amplitude Analytics API key
+
 # Optional OAuth providers
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
@@ -129,6 +132,23 @@ When generating coaching plans (in `coaching-session/route.ts`):
 - **Database**: Neon PostgreSQL (not SQLite)
 - **Environment variables**: Must be set in Vercel dashboard for production
 
+## Analytics
+
+The app uses **Amplitude Analytics** for tracking user behavior and product analytics. See [AMPLITUDE_SETUP.md](AMPLITUDE_SETUP.md) for setup instructions.
+
+**Key analytics functions** (from `lib/analytics.ts`):
+- `analytics.signupCompleted(userId, method)` - Track new signups
+- `analytics.coachingSessionStarted(sessionId, medium, skillLevel)` - Track session starts
+- `analytics.coachingStepCompleted(sessionId, stepNumber, totalSteps)` - Track progress
+- `analytics.artworkUploaded(sessionId, fileSize, fileType)` - Track uploads
+- `analytics.chatMessageSent(sessionId, messageLength)` - Track engagement
+
+**Usage pattern**: Call analytics functions after successful actions, not before. Example:
+```typescript
+// After creating a coaching session
+analytics.coachingSessionStarted(session.id, medium, skillLevel);
+```
+
 ## Common Gotchas
 
 1. **Don't regenerate coaching plans**: Use `CoachingSession.coachPlan` from database on resume
@@ -136,3 +156,4 @@ When generating coaching plans (in `coaching-session/route.ts`):
 3. **Prisma adapter**: Uses `@auth/prisma-adapter` v2, not the old one
 4. **Mobile responsiveness**: All components must support small screens (sm: breakpoints)
 5. **PostgreSQL vs SQLite**: Schema differs slightly, always use PostgreSQL adapter for production
+6. **Analytics are optional**: App works without `NEXT_PUBLIC_AMPLITUDE_API_KEY` set

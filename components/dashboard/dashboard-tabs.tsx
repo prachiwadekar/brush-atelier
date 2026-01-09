@@ -1305,26 +1305,28 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
                           {/* Chatbot Screen */}
                           {activeSwipeScreen === 'chatbot' && (
-                            <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-3 sm:gap-4">
-                              {/* Left Column - Back to Guidance Button */}
-                              <div className="flex items-center justify-start">
+                            <div className="flex flex-col max-h-[calc(100vh-10rem)]">
+                              {/* Back to Lesson Button - Top of Chatbot */}
+                              <div className="mb-3 flex items-center gap-2">
                                 <button
                                   onClick={() => {
-                                    console.log('Back button clicked');
                                     setActiveSwipeScreen('guidance');
                                   }}
-                                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-full p-3 shadow-lg transition-all hover:scale-110"
-                                  title="Back to Guidance"
-                                  aria-label="Back to guidance"
+                                  className="flex items-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2 rounded-lg shadow-md transition-all hover:scale-105 text-sm font-medium"
+                                  aria-label="Back to lesson"
                                 >
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6">
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                                   </svg>
+                                  <span>Back to Lesson</span>
                                 </button>
+                                <div className="text-xs text-gray-500">
+                                  Ask questions about Step {currentTipPage + 1}
+                                </div>
                               </div>
 
-                              {/* Right Column - Chatbot */}
-                              <div className="flex flex-col max-h-[calc(100vh-10rem)]">
+                              {/* Chatbot */}
+                              <div className="flex flex-col flex-1">
                                 {/* Chat Messages */}
                                 <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-white mb-3 min-h-[200px]">
                                   {tipChatHistory.length === 0 ? (

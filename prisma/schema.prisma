@@ -170,3 +170,23 @@ model ChatMessage {
 
   coachingSession   CoachingSession @relation(fields: [coachingSessionId], references: [id], onDelete: Cascade)
 }
+
+model ArtistWaitlist {
+  id                String   @id @default(cuid())
+  name              String
+  email             String   @unique
+  instagramHandle   String?
+  pinterestHandle   String?
+  portfolioUrl      String?
+  specialization    String?  // What they teach (e.g., "Watercolor, Portraits")
+  yearsExperience   Int?
+  offeringDescription String  // Free-form text about what they can offer
+  waitlistPosition  Int      @default(autoincrement())
+  status            String   @default("PENDING") // PENDING, CONTACTED, APPROVED, REJECTED
+  notes             String?  // Admin notes
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([waitlistPosition])
+  @@index([status])
+}

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Users } from "lucide-react";
+import { HomeNav } from "@/components/home-nav";
 
 export default async function HomePage() {
   const session = await auth();
@@ -17,43 +18,7 @@ export default async function HomePage() {
       <div className="absolute bottom-20 left-10 w-96 h-96 bg-[#C2410C]/10 rounded-full blur-3xl"></div>
       <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-[#2563EB]/10 rounded-full blur-3xl"></div>
 
-      <nav className="bg-[#FBF7F2]/95 backdrop-blur-md shadow-sm relative z-10 border-b border-[#1F2933]/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
-          <div className="flex justify-between items-center h-16 sm:h-20">
-            <div className="flex items-center gap-2 sm:gap-4">
-              <h1 className="text-xl sm:text-3xl font-bold">
-                <span className="text-[#C2410C]">Brush</span>{" "}
-                <span className="text-[#1F2933]">Atelier</span>
-              </h1>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              {session?.user ? (
-                <Link
-                  href="/dashboard"
-                  className="bg-[#2563EB] text-white px-4 py-2 sm:px-6 sm:py-2.5 rounded-full hover:bg-[#1D4ED8] transition-all shadow-md hover:shadow-lg font-bold text-sm sm:text-base"
-                >
-                  My Session
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    href="/auth/signup"
-                    className="bg-[#2563EB] text-white px-4 py-2 sm:px-6 sm:py-2.5 rounded-full hover:bg-[#1D4ED8] transition-all shadow-md hover:shadow-lg font-bold text-sm sm:text-base whitespace-nowrap"
-                  >
-                    Try a Lesson
-                  </Link>
-                  <Link
-                    href="/auth/signin"
-                    className="text-[#1F2933] hover:text-[#2563EB] px-3 py-2 sm:px-5 sm:py-2.5 transition-colors font-bold rounded-full hover:bg-[#2563EB]/10 text-sm sm:text-base"
-                  >
-                    Sign in
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <HomeNav isAuthenticated={!!session?.user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-4 sm:py-6 relative z-10">
         <div className="max-w-4xl mx-auto">
@@ -119,17 +84,17 @@ export default async function HomePage() {
                     </span>
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-bold text-[#1F2933] mb-2">
-                    Are you an artist?
+                    Are you a professional artist?
                   </h3>
                   <p className="text-[#1F2933]/70 text-sm sm:text-base">
-                    Get paid for sharing your expertise. Join our marketplace and help students improve their craft.
+                    Get paid for helping others improve their craft.
                   </p>
                 </div>
                 <Link
                   href="/artists/join"
                   className="bg-[#2563EB] text-white px-8 py-3 rounded-full hover:bg-[#1D4ED8] transition-all shadow-md hover:shadow-lg font-bold text-base whitespace-nowrap"
                 >
-                  Join as Artist
+                  Join as Coach
                 </Link>
               </div>
             </div>

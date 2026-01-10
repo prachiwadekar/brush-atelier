@@ -51,7 +51,7 @@ export default function EmailSignInPage() {
             </h1>
           </Link>
           <h2 className="text-2xl font-semibold text-[#1F2933]">Welcome back</h2>
-          <p className="text-[#1F2933]/70 mt-2">Continue your AI-powered art coaching journey</p>
+          <p className="text-[#1F2933]/70 mt-2">Continue your art journey</p>
         </div>
 
         <div className="bg-white/80 backdrop-blur-md p-8 rounded-3xl shadow-lg">

@@ -520,9 +520,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         await loadPortfolioItems();
 
         setTimeout(() => {
-          // Add first coaching message
-          setChatMessages(prev => [
-            ...prev,
+          // Set first coaching message (replace any previous chat)
+          setChatMessages([
             { role: 'bot', message: data.message }
           ]);
           setIsAnalyzing(false);
@@ -560,9 +559,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         setShowMediumButtons(false);
         setWaitingForConfirmation(false);
 
-        // Add initial message
-        setChatMessages(prev => [
-          ...prev,
+        // Set initial message (clear any previous chat)
+        setChatMessages([
           {
             role: 'bot',
             message: "Perfect! I can see your image. Let me prepare your personalized Acrylic coaching session. This will just take a moment..."
@@ -1305,9 +1303,9 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
                           {/* Chatbot Screen */}
                           {activeSwipeScreen === 'chatbot' && (
-                            <div className="flex flex-col max-h-[calc(100vh-10rem)]">
-                              {/* Back to Lesson Button - Top of Chatbot */}
-                              <div className="mb-3 flex items-center gap-2">
+                            <div className="flex flex-col h-full">
+                              {/* Back to Lesson Button - Sticky Top */}
+                              <div className="sticky top-0 z-10 bg-[#FBF7F2] pb-3 mb-3 border-b border-gray-200 flex items-center gap-2">
                                 <button
                                   onClick={() => {
                                     setActiveSwipeScreen('guidance');
@@ -1326,9 +1324,9 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                               </div>
 
                               {/* Chatbot */}
-                              <div className="flex flex-col flex-1">
+                              <div className="flex flex-col flex-1 overflow-hidden">
                                 {/* Chat Messages */}
-                                <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-white mb-3 min-h-[200px]">
+                                <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-white mb-3">
                                   {tipChatHistory.length === 0 ? (
                                     <div className="text-center py-12">
                                       <p className="text-lg font-semibold text-[#1F2933]">How can I help?</p>

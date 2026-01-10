@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Palette, Instagram, Globe, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Instagram, Globe, CheckCircle2, ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
 
 export default function ArtistJoinPage() {
   const router = useRouter();
@@ -175,10 +176,17 @@ export default function ArtistJoinPage() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <Palette className="h-12 w-12 text-[#2563EB]" />
+              <Image
+                src="/logo.png"
+                alt="Brush Atelier Logo"
+                width={120}
+                height={120}
+                className="w-24 h-24 sm:w-28 sm:h-28"
+                unoptimized
+              />
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Join Brush Atelier as an Artist
+              Join Brush Atelier as a Coach
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Get paid for sharing your expertise. Help aspiring artists improve their craft while earning income from personalized critiques and guidance.
@@ -271,32 +279,6 @@ export default function ArtistJoinPage() {
                   onChange={handleChange}
                   placeholder="https://yourwebsite.com"
                 />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="specialization">Specialization</Label>
-                  <Input
-                    id="specialization"
-                    name="specialization"
-                    value={formData.specialization}
-                    onChange={handleChange}
-                    placeholder="e.g., Watercolor, Oil Painting, Portraits"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="yearsExperience">Years of Experience</Label>
-                  <Input
-                    id="yearsExperience"
-                    name="yearsExperience"
-                    type="number"
-                    min="0"
-                    value={formData.yearsExperience}
-                    onChange={handleChange}
-                    placeholder="5"
-                  />
-                </div>
               </div>
 
               <div className="space-y-2">

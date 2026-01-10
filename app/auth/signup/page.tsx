@@ -77,7 +77,7 @@ export default function SignUpPage() {
           </Link>
           <h2 className="text-2xl font-semibold text-[#1F2933]">Create your account</h2>
           <p className="text-[#1F2933]/70 mt-2">
-            Start your AI-powered art coaching journey today
+            Start your art journey today
           </p>
         </div>
 

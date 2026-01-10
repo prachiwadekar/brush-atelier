@@ -142,6 +142,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const [tipQuestion, setTipQuestion] = useState('');
   const [tipChatHistory, setTipChatHistory] = useState<Array<{role: 'user' | 'coach', message: string}>>([]);
   const [isAskingCoach, setIsAskingCoach] = useState(false);
+  const [showFloatingChat, setShowFloatingChat] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const tipChatEndRef = useRef<HTMLDivElement>(null);
@@ -1286,11 +1287,11 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                   <button
                                     onClick={() => {
                                       console.log('Ask Coach button clicked');
-                                      setActiveSwipeScreen('chatbot');
+                                      setShowFloatingChat(!showFloatingChat);
                                     }}
                                     className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-full p-3 shadow-lg transition-all hover:scale-110"
                                     title="Ask Coach"
-                                    aria-label="Go to chatbot"
+                                    aria-label="Open chat with coach"
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M10.05 4.575a1.575 1.575 0 10-3.15 0v3m3.15-3v-1.5a1.575 1.575 0 013.15 0v1.5m-3.15 0l.075 5.925m3.075.75V4.575m0 0a1.575 1.575 0 013.15 0V15M6.9 7.575a1.575 1.575 0 10-3.15 0v8.175a6.75 6.75 0 006.75 6.75h2.018a5.25 5.25 0 003.712-1.538l1.732-1.732a5.25 5.25 0 001.538-3.712l.003-2.024a.668.668 0 01.198-.471 1.575 1.575 0 10-2.228-2.228 3.818 3.818 0 00-1.12 2.687M6.9 7.575V12m6.27 4.318A4.49 4.49 0 0116.35 15m.002 0h-.002" />
@@ -1303,9 +1304,9 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
                           {/* Chatbot Screen */}
                           {activeSwipeScreen === 'chatbot' && (
-                            <div className="flex flex-col h-full">
-                              {/* Back to Lesson Button - Sticky Top */}
-                              <div className="sticky top-0 z-10 bg-[#FBF7F2] pb-3 mb-3 border-b border-gray-200 flex items-center gap-2">
+                            <div className="flex flex-col h-full overflow-hidden">
+                              {/* Back to Lesson Button - Fixed at Top */}
+                              <div className="flex-shrink-0 bg-[#FBF7F2] pb-3 mb-3 border-b border-gray-200 flex items-center gap-2">
                                 <button
                                   onClick={() => {
                                     setActiveSwipeScreen('guidance');
@@ -1323,8 +1324,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 </div>
                               </div>
 
-                              {/* Chatbot */}
-                              <div className="flex flex-col flex-1 overflow-hidden">
+                              {/* Chatbot - Scrollable Area */}
+                              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                                 {/* Chat Messages */}
                                 <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-white mb-3">
                                   {tipChatHistory.length === 0 ? (
@@ -2080,6 +2081,86 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
               Click anywhere or press ESC to close
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating Chat Widget */}
+      {showFloatingChat && paintingGuide?.coachPlan?.[currentTipPage] && (
+        <div className="fixed bottom-4 right-4 w-96 h-[500px] bg-white rounded-lg shadow-2xl flex flex-col z-50 border border-gray-200">
+          {/* Chat Header */}
+          <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-[#2563EB] text-white rounded-t-lg">
+            <div className="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.05 4.575a1.575 1.575 0 10-3.15 0v3m3.15-3v-1.5a1.575 1.575 0 013.15 0v1.5m-3.15 0l.075 5.925m3.075.75V4.575m0 0a1.575 1.575 0 013.15 0V15M6.9 7.575a1.575 1.575 0 10-3.15 0v8.175a6.75 6.75 0 006.75 6.75h2.018a5.25 5.25 0 003.712-1.538l1.732-1.732a5.25 5.25 0 001.538-3.712l.003-2.024a.668.668 0 01.198-.471 1.575 1.575 0 10-2.228-2.228 3.818 3.818 0 00-1.12 2.687M6.9 7.575V12m6.27 4.318A4.49 4.49 0 0116.35 15m.002 0h-.002" />
+              </svg>
+              <div>
+                <div className="font-semibold text-sm">Ask Your Coach</div>
+                <div className="text-xs opacity-90">Step {currentTipPage + 1} of {paintingGuide.coachPlan.length}</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowFloatingChat(false)}
+              className="hover:bg-white/20 p-1 rounded transition-colors"
+              aria-label="Close chat"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-gray-50">
+            {tipChatHistory.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-600">Ask me anything about this step!</p>
+              </div>
+            ) : (
+              tipChatHistory.map((msg, index) => (
+                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] rounded-lg px-3 py-2 ${
+                    msg.role === 'user'
+                      ? 'bg-[#2563EB] text-white'
+                      : 'bg-white border border-gray-200 text-[#1F2933]'
+                  }`}>
+                    <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                  </div>
+                </div>
+              ))
+            )}
+            {isAskingCoach && (
+              <div className="flex justify-start">
+                <div className="bg-white border border-gray-200 rounded-lg px-3 py-2">
+                  <p className="text-sm text-[#2563EB] italic">Coach is typing...</p>
+                </div>
+              </div>
+            )}
+            <div ref={tipChatEndRef} />
+          </div>
+
+          {/* Chat Input */}
+          <form onSubmit={handleAskTipQuestion} className="border-t border-gray-200 p-3 bg-white rounded-b-lg">
+            <div className="relative">
+              <input
+                type="text"
+                value={tipQuestion}
+                onChange={(e) => setTipQuestion(e.target.value)}
+                placeholder="Ask a question..."
+                className="w-full pr-12 py-2.5 px-3 text-sm text-[#1F2933] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-transparent"
+                disabled={isAskingCoach}
+              />
+              <button
+                type="submit"
+                disabled={!tipQuestion.trim() || isAskingCoach}
+                className="absolute right-1 top-1/2 -translate-y-1/2 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg p-2 flex items-center justify-center"
+                title="Send question"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                </svg>
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

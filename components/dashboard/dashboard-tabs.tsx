@@ -143,6 +143,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const [tipChatHistory, setTipChatHistory] = useState<Array<{role: 'user' | 'coach', message: string}>>([]);
   const [isAskingCoach, setIsAskingCoach] = useState(false);
   const [showFloatingChat, setShowFloatingChat] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [artworkTitle, setArtworkTitle] = useState<string | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const tipChatEndRef = useRef<HTMLDivElement>(null);
@@ -187,6 +189,10 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   useEffect(() => {
     if (activeView === "portfolio") {
       loadPortfolioItems();
+    }
+    // Close floating chat when navigating away from active session
+    if (activeView !== "new-artwork") {
+      setShowFloatingChat(false);
     }
   }, [activeView]);
 
@@ -511,6 +517,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         }
 
         setEstimatedTime(data.estimated_time || null);
+        setArtworkTitle(data.artwork_title || null);
         console.log("State after setting paintingGuide:", data.painting_guide);
         console.log("Estimated time:", data.estimated_time);
 
@@ -568,8 +575,62 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
           }
         ]);
 
+        // Clear tip chat history for new session
+        setTipChatHistory([]);
+
         // Start coaching session automatically with the uploaded file
         // Pass the file directly to avoid race condition with state updates
+        await startCoachingSessionAutomatically(defaultMedium, file);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files[0] && files[0].type.startsWith('image/')) {
+      const file = files[0];
+      setUploadedFile(file);
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        setPreviewUrl(reader.result as string);
+
+        // Automatically select Acrylic and start coaching session
+        const defaultMedium = 'Acrylic';
+        setSelectedMedium(defaultMedium);
+        setShowMediumButtons(false);
+        setWaitingForConfirmation(false);
+
+        // Set initial message (clear any previous chat)
+        setChatMessages([
+          {
+            role: 'bot',
+            message: "Perfect! I can see your image. Let me prepare your personalized Acrylic coaching session. This will just take a moment..."
+          }
+        ]);
+
+        // Clear tip chat history for new session
+        setTipChatHistory([]);
+
+        // Start coaching session automatically with the uploaded file
         await startCoachingSessionAutomatically(defaultMedium, file);
       };
       reader.readAsDataURL(file);
@@ -606,6 +667,9 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     setEstimatedTime(null);
     setShowSuppliesModal(false);
     setCurrentTipPage(0); // Reset guidance pagination
+    setTipChatHistory([]); // Clear tip chat history for new session
+    setShowFloatingChat(false); // Close floating chat widget
+    setArtworkTitle(null); // Clear artwork title
 
     // Switch to Art Coaching view
     onViewChange("new-artwork");
@@ -852,83 +916,52 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     <div>
         {activeView === "new-artwork" && (
           <div className="bg-white p-4 sm:p-6 md:p-8 rounded-lg sm:rounded-xl shadow-sm w-full max-w-full">
-            <div className="flex items-center justify-end mb-4">
-              <div className="flex items-center gap-3">
-                {previewUrl && paintingGuide && paintingGuide.coachPlan && paintingGuide.coachPlan.length > 0 && (
-                  <>
-                    <button
-                      className="relative group bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 rounded-lg text-sm font-black hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg text-white"
-                      style={{ fontWeight: 1000 }}
-                      title="Get unstuck without starting over"
-                    >
-                      I'm Stuck
-                      {/* Tooltip on hover */}
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                        Get unstuck without starting over
-                      </span>
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
 
             {!previewUrl ? (
               <div className="flex flex-col items-center justify-center max-w-4xl mx-auto">
-                {/* Chatbot - Full Width */}
-                <div className="w-full border-2 border-gray-200 rounded-lg p-6 flex flex-col h-[500px]">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-[#1F2933] mb-1">Your Personal Art Coach</h3>
-                    <p className="text-sm text-[#1F2933]/70">Ask anything. No judgment. Let's bring this painting to life together.</p>
-                  </div>
-
-                  {/* Chat Messages */}
-                  <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-                    {chatMessages.map((msg, index) => (
-                      <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] px-4 py-2 rounded-lg ${
-                          msg.role === 'user'
-                            ? 'bg-[#2563EB] text-white'
-                            : 'bg-gray-200 text-[#1F2933]'
-                        }`}>
-                          <div className="whitespace-pre-wrap text-base">
-                            {msg.message}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    <div ref={chatEndRef} />
-                  </div>
-
-                  {/* Chat Input with Upload Button */}
-                  <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <div className="flex-1 relative">
-                      <label className="absolute left-3 top-1/2 -translate-y-1/2 cursor-pointer">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                        <svg className="w-5 h-5 text-[#1F2933]/50 hover:text-[#2563EB] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </label>
-                      <input
-                        type="text"
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        placeholder="Type your message..."
-                        className="w-full pl-12 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#2563EB] text-[#1F2933]"
-                      />
+                {/* Upload Image Prompt with Drag & Drop */}
+                <div
+                  className={`w-full border-2 border-dashed rounded-lg p-12 text-center transition-all ${
+                    isDragging
+                      ? 'border-[#2563EB] bg-[#2563EB]/5 scale-[1.02]'
+                      : 'border-gray-300 hover:border-[#2563EB]/50 hover:bg-gray-50'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <div className="flex flex-col items-center gap-4">
+                    <div className={`transition-all ${isDragging ? 'scale-110' : ''}`}>
+                      <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
                     </div>
-                    <button
-                      type="submit"
-                      className="px-6 py-2 bg-[#2563EB] text-white rounded-lg font-medium hover:bg-[#1D4ED8] transition-all"
-                    >
-                      Send
-                    </button>
-                  </form>
+                    <div>
+                      <h3 className="text-lg font-semibold text-[#1F2933] mb-2">
+                        {isDragging ? 'Drop your image here' : 'Upload Your Reference Image'}
+                      </h3>
+                      <p className="text-sm text-[#1F2933]/70">
+                        {isDragging ? 'Release to upload' : 'Drag and drop an image, or click to browse'}
+                      </p>
+                    </div>
+                    {!isDragging && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-6 py-3 bg-[#2563EB] text-white rounded-lg font-semibold hover:bg-[#1D4ED8] transition-all shadow-md"
+                      >
+                        Choose Image
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -941,16 +974,17 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                     <div className="space-y-3">
                       {/* Reference Image Section */}
                       {showUploadedImage && (
-                        <div className="relative rounded-lg overflow-hidden group flex-shrink-0">
-                          <Image
-                            src={previewUrl}
-                            alt="Reference"
-                            width={800}
-                            height={600}
-                            className="w-full h-auto max-h-[calc(100vh-20rem)] object-contain"
-                          />
-                          {/* Control buttons overlay */}
-                          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="space-y-2">
+                          <div className="relative rounded-lg overflow-hidden group flex-shrink-0">
+                            <Image
+                              src={previewUrl}
+                              alt="Reference"
+                              width={800}
+                              height={600}
+                              className="w-full h-auto max-h-[calc(100vh-20rem)] object-contain"
+                            />
+                            {/* Control buttons overlay */}
+                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {/* Zoom button */}
                             <button
                               onClick={() => setShowImageZoom(true)}
@@ -972,6 +1006,13 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                               </svg>
                             </button>
                           </div>
+                          </div>
+                          {/* AI-Generated Artwork Title */}
+                          {artworkTitle && (
+                            <div className="px-2">
+                              <h3 className="text-sm font-semibold text-[#1F2933]">{artworkTitle}</h3>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1114,7 +1155,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
                               </svg>
                             </div>
-                            <h3 className="text-xl font-bold text-[#1F2933]">Analyzing Your Artwork</h3>
+                            <h3 className="text-xl font-bold text-[#1F2933]">Analyzing Your Reference</h3>
                           </div>
                           <div className="space-y-3">
                             <div className="flex items-center justify-between text-sm font-medium text-[#1F2933]">
@@ -1145,34 +1186,9 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                     })()}
                     {paintingGuide && paintingGuide.coachPlan && paintingGuide.coachPlan.length > 0 && (
                       <div className="bg-white rounded-lg border-2 border-gray-200 p-4 mt-4 overflow-hidden flex-1 flex flex-col">
-                        {/* Swipeable Container */}
-                        <div
-                          className="relative touch-pan-y flex-1 flex flex-col"
-                          onTouchStart={(e) => {
-                            setSwipeStartX(e.touches[0].clientX);
-                          }}
-                          onTouchMove={(e) => {
-                            if (swipeStartX !== null) {
-                              const currentX = e.touches[0].clientX;
-                              const diff = currentX - swipeStartX;
-                              setSwipeOffset(diff);
-                            }
-                          }}
-                          onTouchEnd={() => {
-                            if (Math.abs(swipeOffset) > 100) {
-                              if (swipeOffset > 0 && activeSwipeScreen === 'chatbot') {
-                                setActiveSwipeScreen('guidance');
-                              } else if (swipeOffset < 0 && activeSwipeScreen === 'guidance') {
-                                setActiveSwipeScreen('chatbot');
-                              }
-                            }
-                            setSwipeStartX(null);
-                            setSwipeOffset(0);
-                          }}
-                        >
-                          {/* Guidance Screen */}
-                          {activeSwipeScreen === 'guidance' && (
-                            <div className="flex-1 flex flex-col h-full">
+                        {/* Guidance Content */}
+                        <div className="relative flex-1 flex flex-col">
+                          <div className="flex-1 flex flex-col h-full">
                               {/* Phase Label */}
                               <div className="mb-3">
                                 <span className="text-base font-bold text-[#1F2933]">
@@ -1299,99 +1315,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                   </button>
                                 </div>
                               </div>
-                            </div>
-                          )}
-
-                          {/* Chatbot Screen */}
-                          {activeSwipeScreen === 'chatbot' && (
-                            <div className="flex flex-col h-full overflow-hidden">
-                              {/* Back to Lesson Button - Fixed at Top */}
-                              <div className="flex-shrink-0 bg-[#FBF7F2] pb-3 mb-3 border-b border-gray-200 flex items-center gap-2">
-                                <button
-                                  onClick={() => {
-                                    setActiveSwipeScreen('guidance');
-                                  }}
-                                  className="flex items-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2 rounded-lg shadow-md transition-all hover:scale-105 text-sm font-medium"
-                                  aria-label="Back to lesson"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                                  </svg>
-                                  <span>Back to Lesson</span>
-                                </button>
-                                <div className="text-xs text-gray-500">
-                                  Ask questions about Step {currentTipPage + 1}
-                                </div>
-                              </div>
-
-                              {/* Chatbot - Scrollable Area */}
-                              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                                {/* Chat Messages */}
-                                <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-white mb-3">
-                                  {tipChatHistory.length === 0 ? (
-                                    <div className="text-center py-12">
-                                      <p className="text-lg font-semibold text-[#1F2933]">How can I help?</p>
-                                    </div>
-                                  ) : (
-                                    tipChatHistory.map((msg, index) => (
-                                      <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[85%] rounded-lg px-3 py-2 ${
-                                          msg.role === 'user'
-                                            ? 'bg-[#2563EB]/10 text-[#1F2933] border border-[#2563EB]/20'
-                                            : 'bg-gray-50 border border-gray-200 text-[#1F2933]'
-                                        }`}>
-                                          <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                                        </div>
-                                      </div>
-                                    ))
-                                  )}
-                                  {isAskingCoach && (
-                                    <div className="flex justify-start">
-                                      <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                                        <p className="text-sm text-[#C2410C]/60 italic">Coach is typing...</p>
-                                      </div>
-                                    </div>
-                                  )}
-                                  <div ref={tipChatEndRef} />
-                                </div>
-
-                                {/* Input Form */}
-                                <form onSubmit={handleAskTipQuestion} className="border-t border-gray-200 pt-3">
-                                  <div className="relative">
-                                    {/* Voice Mode Button - Left Side */}
-                                    <button
-                                      type="button"
-                                      className="absolute left-1 top-1/2 -translate-y-1/2 bg-gray-100 hover:bg-gray-200 transition-colors rounded-full p-2.5 flex items-center justify-center"
-                                      title="Voice mode"
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-[#1F2933]">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
-                                      </svg>
-                                    </button>
-                                    <input
-                                      type="text"
-                                      value={tipQuestion}
-                                      onChange={(e) => setTipQuestion(e.target.value)}
-                                      placeholder=""
-                                      className="w-full pl-12 pr-12 py-3 text-sm text-[#1F2933] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-transparent"
-                                      disabled={isAskingCoach}
-                                    />
-                                    {/* Send Button - Right Side */}
-                                    <button
-                                      type="submit"
-                                      disabled={!tipQuestion.trim() || isAskingCoach}
-                                      className="absolute right-1 top-1/2 -translate-y-1/2 bg-[#C2410C] hover:bg-[#C2410C]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-full p-2.5 flex items-center justify-center"
-                                      title="Send question"
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-white">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                </form>
-                              </div>
-                            </div>
-                          )}
+                          </div>
                         </div>
                       </div>
                     )}

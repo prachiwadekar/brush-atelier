@@ -1,6 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Generate an intelligent title based on image analysis
+async function generateArtworkTitle(imageData: string): Promise<string> {
+  try {
+    // Extract the base64 data and mime type from the data URL
+    const matches = imageData.match(/^data:([^;]+);base64,(.+)$/);
+    if (!matches) {
+      return "Untitled Artwork";
+    }
+
+    const [, mimeType, base64] = matches;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      max_tokens: 50,
+      temperature: 0.3,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Analyze this artwork and provide a short, descriptive title (2-4 words maximum) that captures what the image depicts. Focus on the main subject matter. Examples: "Sunset Over Ocean", "Bowl of Strawberries", "Portrait Study", "Forest Landscape". Respond with ONLY the title, no explanations.`,
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageData,
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const generatedTitle = response.choices[0]?.message?.content?.trim() || "Untitled Artwork";
+    // Remove quotes if AI wrapped the title in them
+    return generatedTitle.replace(/^["']|["']$/g, '');
+  } catch (error) {
+    console.error("Error generating title:", error);
+    return "Untitled Artwork";
+  }
+}
 
 // Add a portfolio item
 export async function POST(request: NextRequest) {
@@ -13,12 +61,15 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const imageData = formData.get("imageData") as string; // base64 image data
     const medium = formData.get("medium") as string;
-    const title = formData.get("title") as string || "Untitled Artwork";
     const sessionId = formData.get("sessionId") as string | null;
 
     if (!imageData) {
       return NextResponse.json({ error: "No image data provided" }, { status: 400 });
     }
+
+    // Generate AI-powered title based on image content
+    console.log("Generating AI title for portfolio item...");
+    const title = await generateArtworkTitle(imageData);
 
     // Get the student profile
     const user = await prisma.user.findUnique({
@@ -34,7 +85,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Student profile not found" }, { status: 404 });
     }
 
-    const description = medium ? `Created with ${medium}` : null;
+    // No longer need generic description since we have AI-generated title
+    const description = null;
 
     // If sessionId provided, get the coaching session ID from database
     let coachingSessionDbId = null;

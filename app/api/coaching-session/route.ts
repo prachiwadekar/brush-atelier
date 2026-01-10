@@ -21,6 +21,41 @@ interface CoachStep {
   color_mixing?: string;
 }
 
+// Generate an intelligent title based on image analysis
+async function generateArtworkTitle(imageData: string): Promise<string> {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      max_tokens: 50,
+      temperature: 0.3,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `Analyze this artwork and provide a short, descriptive title (2-4 words maximum) that captures what the image depicts. Focus on the main subject matter. Examples: "Sunset Over Ocean", "Bowl of Strawberries", "Portrait Study", "Forest Landscape". Respond with ONLY the title, no explanations.`,
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageData,
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const generatedTitle = response.choices[0]?.message?.content?.trim() || "Untitled Artwork";
+    // Remove quotes if AI wrapped the title in them
+    return generatedTitle.replace(/^["']|["']$/g, '');
+  } catch (error) {
+    console.error("Error generating title:", error);
+    return "Untitled Artwork";
+  }
+}
+
 // Initialize a new coaching session
 export async function POST(request: NextRequest) {
   console.log("=== COACHING SESSION API CALLED ===");
@@ -272,6 +307,11 @@ Return ONLY valid JSON, no other text. DO NOT include markdown code blocks or ex
       // Generate estimated time
       const estimatedTime = await generateEstimatedTime(base64, mimeType, medium, skillLevel);
 
+      // Generate AI-powered title based on image content
+      console.log("Generating AI title for artwork...");
+      const aiTitle = await generateArtworkTitle(imageUrl);
+      console.log(`Generated title: "${aiTitle}"`);
+
       // Create session in database with all data
       const sessionId = randomBytes(16).toString("hex");
 
@@ -326,21 +366,21 @@ Return ONLY valid JSON, no other text. DO NOT include markdown code blocks or ex
         });
 
         if (existingPortfolioItem) {
-          // Update existing portfolio item with coaching session info
+          // Update existing portfolio item with coaching session info and AI title
           await prisma.portfolioItem.update({
             where: { id: existingPortfolioItem.id },
             data: {
-              title: `${medium} Artwork`,
-              description: `Created with ${medium}`,
+              title: aiTitle,
+              description: null, // Remove generic description
               coachingSessionId: coachingSessionRecord.id,
             },
           });
         } else {
-          // Create new portfolio item
+          // Create new portfolio item with AI-generated title
           await prisma.portfolioItem.create({
             data: {
-              title: `${medium} Artwork`,
-              description: `Created with ${medium}`,
+              title: aiTitle,
+              description: null, // No generic description needed
               imageUrl,
               studentProfileId: user.studentProfile.id,
               coachingSessionId: coachingSessionRecord.id,
@@ -426,6 +466,7 @@ Return ONLY valid JSON, no other text. DO NOT include markdown code blocks or ex
         total_steps: coachPlan.length,
         painting_guide: completeGuide,
         estimated_time: estimatedTime,
+        artwork_title: aiTitle,
       });
     }
 

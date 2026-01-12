@@ -4,6 +4,80 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+// Image compression utility
+async function compressImage(file: File, maxSizeBytes: number): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        // Calculate new dimensions (max 2048px on longest side)
+        let width = img.width;
+        let height = img.height;
+        const maxDimension = 2048;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height / width) * maxDimension;
+            width = maxDimension;
+          } else {
+            width = (width / height) * maxDimension;
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Start with quality 0.85 and reduce if needed
+        let quality = 0.85;
+        const tryCompress = () => {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Failed to compress image'));
+                return;
+              }
+
+              // If still too large and quality can be reduced, try again
+              if (blob.size > maxSizeBytes && quality > 0.5) {
+                quality -= 0.1;
+                tryCompress();
+                return;
+              }
+
+              // Create a new File from the blob
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+
+              resolve(compressedFile);
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+
+        tryCompress();
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+  });
+}
+
 interface DashboardTabsProps {
   userWithProfile: {
     name: string;
@@ -561,13 +635,19 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+      let file = e.target.files[0];
 
-      // Validate file size (max 5MB)
+      // Compress image if it exceeds 5MB
       const maxSize = 5 * 1024 * 1024; // 5MB in bytes
       if (file.size > maxSize) {
-        setError("Image file is too large. Please upload an image smaller than 5MB.");
-        return;
+        setError(`Image is ${(file.size / (1024 * 1024)).toFixed(1)}MB. Compressing...`);
+        try {
+          file = await compressImage(file, maxSize);
+          setError(null); // Clear error after successful compression
+        } catch (compressionError) {
+          setError("Failed to compress image. Please try a smaller image.");
+          return;
+        }
       }
       setUploadedFile(file);
 
@@ -620,13 +700,19 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
     const files = e.dataTransfer.files;
     if (files && files[0] && files[0].type.startsWith('image/')) {
-      const file = files[0];
+      let file = files[0];
 
-      // Validate file size (max 5MB)
+      // Compress image if it exceeds 5MB
       const maxSize = 5 * 1024 * 1024; // 5MB in bytes
       if (file.size > maxSize) {
-        setError("Image file is too large. Please upload an image smaller than 5MB.");
-        return;
+        setError(`Image is ${(file.size / (1024 * 1024)).toFixed(1)}MB. Compressing...`);
+        try {
+          file = await compressImage(file, maxSize);
+          setError(null); // Clear error after successful compression
+        } catch (compressionError) {
+          setError("Failed to compress image. Please try a smaller image.");
+          return;
+        }
       }
 
       setUploadedFile(file);

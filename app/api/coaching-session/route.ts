@@ -5,6 +5,9 @@ import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { randomBytes } from "crypto";
 
+// Increase body size limit for image uploads
+export const maxDuration = 60; // 60 seconds max execution time
+
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
@@ -65,7 +68,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const formData = await request.formData();
+    let formData;
+    try {
+      formData = await request.formData();
+    } catch (parseError: any) {
+      console.error("Failed to parse form data:", parseError);
+      return NextResponse.json({
+        error: "Failed to process upload. The image file may be too large. Please try a smaller image (under 5MB)."
+      }, { status: 413 });
+    }
     const action = formData.get("action") as string;
 
     // Create new session

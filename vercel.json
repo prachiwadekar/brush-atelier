@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "app/api/coaching-session/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

@@ -493,6 +493,14 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         body: formData,
       });
 
+      // Check if response is JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        console.error("Non-JSON response:", text.substring(0, 200));
+        throw new Error("The image file may be too large. Please try a smaller image (under 5MB).");
+      }
+
       const data = await response.json();
       console.log("=== API RESPONSE ===", data);
       console.log("Painting guide:", data.painting_guide);
@@ -554,6 +562,13 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        setError("Image file is too large. Please upload an image smaller than 5MB.");
+        return;
+      }
       setUploadedFile(file);
 
       // Create preview URL
@@ -606,6 +621,14 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     const files = e.dataTransfer.files;
     if (files && files[0] && files[0].type.startsWith('image/')) {
       const file = files[0];
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        setError("Image file is too large. Please upload an image smaller than 5MB.");
+        return;
+      }
+
       setUploadedFile(file);
 
       // Create preview URL

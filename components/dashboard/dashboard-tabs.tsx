@@ -183,6 +183,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const [currentPaintingStep, setCurrentPaintingStep] = useState<number>(0);
   const [showSuppliesModal, setShowSuppliesModal] = useState<boolean>(false);
   const [showProductLinksModal, setShowProductLinksModal] = useState<boolean>(false);
+  const [showSuppliesSection, setShowSuppliesSection] = useState<boolean>(true); // Expanded by default
   const [paintingComplete, setPaintingComplete] = useState<boolean>(false);
   const [showMediumButtons, setShowMediumButtons] = useState<boolean>(false);
   const [portfolioItems, setPortfolioItems] = useState<any[]>([]);
@@ -1138,20 +1139,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         </button>
                       )}
 
-                      {/* Supplies Button - Centered under image */}
-                      {showUploadedImage && paintingGuide && paintingGuide.coachPlan && paintingGuide.coachPlan.length > 0 && getSupplies() && (
-                        <div className="flex justify-center mt-3">
-                          <button
-                            onClick={() => setShowSuppliesModal(true)}
-                            className="bg-white border-2 border-purple-600 hover:bg-purple-50 text-purple-600 p-2 rounded-lg transition-all shadow-sm hover:shadow-md"
-                            title="Recommended painting supplies"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
-                            </svg>
-                          </button>
-                        </div>
-                      )}
                     </div>
 
                     {/* Secondary Actions - De-emphasized */}
@@ -1341,6 +1328,81 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 <p className="text-sm text-purple-800 leading-relaxed">
                                   {paintingGuide.coachPlan[currentTipPage].color_mixing}
                                 </p>
+                              </div>
+                            )}
+
+                            {/* Materials Section */}
+                            {getSupplies() && (
+                              <div className="mb-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="text-sm font-bold text-[#1F2933] flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+                                    </svg>
+                                    Materials Needed
+                                  </h4>
+                                  <button
+                                    onClick={() => setShowSuppliesSection(!showSuppliesSection)}
+                                    className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-semibold"
+                                  >
+                                    {showSuppliesSection ? 'Hide' : 'Show'}
+                                  </button>
+                                </div>
+
+                                {showSuppliesSection && (
+                                  <div className="space-y-3 text-sm">
+                                    {/* Paint Colors */}
+                                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-base">🎨</span>
+                                        <h5 className="font-bold text-[#1F2933]">Paint Colors</h5>
+                                      </div>
+                                      <div className="flex flex-wrap gap-2">
+                                        {getSupplies()!.paintColors.map((color: string, index: number) => (
+                                          <div key={index} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded border border-gray-200">
+                                            <div
+                                              className="w-4 h-4 rounded-full border border-gray-300"
+                                              style={{ backgroundColor: getColorHex(color) }}
+                                            />
+                                            <span className="text-xs text-[#1F2933]">{color}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* Brushes */}
+                                    <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-base">🖌️</span>
+                                        <h5 className="font-bold text-[#1F2933]">Brushes</h5>
+                                      </div>
+                                      <ul className="space-y-1">
+                                        {getSupplies()!.brushes.map((brush: string, index: number) => (
+                                          <li key={index} className="flex items-start gap-2 text-xs text-[#1F2933]">
+                                            <span className="text-orange-600 mt-0.5">•</span>
+                                            <span>{brush}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+
+                                    {/* Other Materials */}
+                                    <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-base">✨</span>
+                                        <h5 className="font-bold text-[#1F2933]">Other Materials</h5>
+                                      </div>
+                                      <ul className="space-y-1">
+                                        {getSupplies()!.otherMaterials.map((material: string, index: number) => (
+                                          <li key={index} className="flex items-start gap-2 text-xs text-[#1F2933]">
+                                            <span className="text-emerald-600 mt-0.5">•</span>
+                                            <span>{material}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
 

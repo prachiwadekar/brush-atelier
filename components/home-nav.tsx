@@ -29,12 +29,26 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
     <nav className="bg-[#FBF7F2]/95 backdrop-blur-md shadow-sm relative z-10 border-b border-[#1F2933]/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex justify-between items-center h-16 sm:h-20">
-          <Link href="/">
-            <h1 className="text-xl sm:text-3xl font-bold">
-              <span className="text-[#C2410C]">Brush</span>{" "}
-              <span className="text-[#1F2933]">Atelier</span>
-            </h1>
-          </Link>
+          <div className="flex items-center gap-8 sm:gap-12">
+            <Link href="/" className="relative">
+              <h1 className="text-xl sm:text-3xl font-bold">
+                <span className="text-[#C2410C]">Brush</span>{" "}
+                <span className="text-[#1F2933]">Atelier</span>
+                {/* BETA Badge - Superscript */}
+                <span className="absolute -top-1 sm:-top-2 -right-10 sm:-right-12 text-[#2563EB] text-[0.5rem] sm:text-xs font-bold uppercase tracking-wider border border-[#2563EB] px-1 sm:px-1.5 py-0.5 rounded">
+                  BETA
+                </span>
+              </h1>
+            </Link>
+
+            {/* Help Shape Button */}
+            <Link
+              href="/feedback"
+              className="bg-[#C2410C] text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-[#A03609] transition-all shadow-sm hover:shadow-md whitespace-nowrap ml-4 sm:ml-8"
+            >
+              Help shape Brush Atelier
+            </Link>
+          </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (

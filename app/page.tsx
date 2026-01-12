@@ -37,13 +37,9 @@ export default async function HomePage() {
               />
             </div>
 
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#1F2933] mb-2 sm:mb-3 leading-tight text-center" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#1F2933] mb-4 sm:mb-6 leading-tight text-center" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
               Make Art <span className="text-[#2563EB]">You're Proud Of</span>
             </h2>
-
-            <p className="text-base sm:text-lg text-[#1F2933] mb-4 sm:mb-6 italic font-bold">
-              Designed For Adult Learners & Returning Artists.
-            </p>
 
             {/* How It Works - Compact */}
             <div className="space-y-2 sm:space-y-3 flex flex-col items-center">
@@ -83,7 +79,7 @@ export default async function HomePage() {
                       {artistCount > 0 ? `${artistCount} artists` : 'Be the first'} on the waitlist
                     </span>
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-bold text-[#1F2933] mb-2">
+                  <h3 className="text-xl sm:text-2xl font-bold text-[#1F2933] mb-2">
                     Are you a professional artist?
                   </h3>
                   <p className="text-[#1F2933]/70 text-sm sm:text-base">

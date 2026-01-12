@@ -40,14 +40,6 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
                 </span>
               </h1>
             </Link>
-
-            {/* Help Shape Button */}
-            <Link
-              href="/feedback"
-              className="bg-[#C2410C] text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-[#A03609] transition-all shadow-sm hover:shadow-md whitespace-nowrap ml-4 sm:ml-8"
-            >
-              Help shape Brush Atelier
-            </Link>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -99,13 +91,6 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
               {isDropdownOpen && (
                 <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-[#1F2933]/10 py-2 z-50">
                   <Link
-                    href="/how-it-works"
-                    className="block px-4 py-2.5 text-[#1F2933] hover:bg-[#2563EB]/10 hover:text-[#2563EB] transition-colors text-sm font-medium"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    How Brush Atelier Works
-                  </Link>
-                  <Link
                     href="/about"
                     className="block px-4 py-2.5 text-[#1F2933] hover:bg-[#2563EB]/10 hover:text-[#2563EB] transition-colors text-sm font-medium"
                     onClick={() => setIsDropdownOpen(false)}
@@ -115,6 +100,14 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
                 </div>
               )}
             </div>
+
+            {/* Help Shape Button */}
+            <Link
+              href="/feedback"
+              className="bg-[#C2410C] text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-[#A03609] transition-all shadow-sm hover:shadow-md whitespace-nowrap"
+            >
+              Help shape Brush Atelier
+            </Link>
           </div>
         </div>
       </div>

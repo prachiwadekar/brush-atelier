@@ -62,7 +62,7 @@ export default async function HomePage() {
                   <div className="flex-shrink-0 w-8 h-8 bg-[#FBF7F2] border-2 border-[#2563EB] rounded-md flex items-center justify-center">
                     <span className="text-sm font-semibold text-[#2563EB]">3</span>
                   </div>
-                  <h4 className="font-bold text-[#1F2933] text-sm sm:text-base">Paint → Upload your work → Get feedback</h4>
+                  <h4 className="font-bold text-[#1F2933] text-sm sm:text-base">Paint → Upload your work → Get feedback → <span className="font-black text-[#2563EB]">Improve and Feel Proud!</span></h4>
                 </div>
               </div>
             </div>
@@ -79,11 +79,11 @@ export default async function HomePage() {
                       {artistCount > 0 ? `${artistCount} artists` : 'Be the first'} on the waitlist
                     </span>
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-[#1F2933] mb-2">
-                    Are you a professional artist?
+                  <h3 className="text-xl sm:text-2xl font-bold text-black mb-2">
+                    Get paid helping others improve their art.
                   </h3>
-                  <p className="text-[#1F2933]/70 text-sm sm:text-base">
-                    Get paid for helping others improve their craft.
+                  <p className="text-black text-sm sm:text-base">
+                    For professional artists
                   </p>
                 </div>
                 <Link

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Menu } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 
 type HomeNavProps = {
@@ -44,23 +44,12 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
 
           <div className="flex items-center gap-2 sm:gap-3">
             {isAuthenticated ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="bg-[#2563EB] text-white px-4 py-2 sm:px-6 sm:py-2.5 rounded-full hover:bg-[#1D4ED8] transition-all shadow-md hover:shadow-lg font-bold text-sm sm:text-base"
-                >
-                  My Session
-                </Link>
-                <button
-                  onClick={async () => {
-                    await signOut({ redirect: false });
-                    window.location.href = "/";
-                  }}
-                  className="text-[#1F2933] hover:text-[#2563EB] px-3 py-2 sm:px-5 sm:py-2.5 transition-colors font-bold rounded-full hover:bg-[#2563EB]/10 text-sm sm:text-base"
-                >
-                  Sign out
-                </button>
-              </>
+              <Link
+                href="/dashboard"
+                className="bg-[#2563EB] text-white px-4 py-2 sm:px-6 sm:py-2.5 rounded-full hover:bg-[#1D4ED8] transition-all shadow-md hover:shadow-lg font-bold text-sm sm:text-base"
+              >
+                My Session
+              </Link>
             ) : (
               <>
                 <Link
@@ -78,13 +67,14 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
               </>
             )}
 
-            {/* About Dropdown */}
+            {/* Unified Menu Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="flex items-center gap-1 text-[#1F2933] hover:text-[#2563EB] px-3 py-2 transition-colors font-bold rounded-full hover:bg-[#2563EB]/10 text-sm sm:text-base"
+                aria-label="Menu"
               >
-                About
+                <Menu className="h-5 w-5" />
                 <ChevronDown className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
@@ -97,17 +87,32 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
                   >
                     About Us
                   </Link>
+
+                  <Link
+                    href="/feedback"
+                    className="block px-4 py-2.5 text-[#1F2933] hover:bg-[#2563EB]/10 hover:text-[#2563EB] transition-colors text-sm font-medium"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    Help Shape Brush Atelier
+                  </Link>
+
+                  {isAuthenticated && (
+                    <>
+                      <div className="border-t border-[#1F2933]/10 my-2"></div>
+                      <button
+                        onClick={async () => {
+                          await signOut({ redirect: false });
+                          window.location.href = "/";
+                        }}
+                        className="block w-full text-left px-4 py-2.5 text-[#1F2933] hover:bg-[#2563EB]/10 hover:text-[#2563EB] transition-colors text-sm font-medium"
+                      >
+                        Sign Out
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
-
-            {/* Help Shape Button */}
-            <Link
-              href="/feedback"
-              className="bg-[#C2410C] text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-[#A03609] transition-all shadow-sm hover:shadow-md whitespace-nowrap"
-            >
-              Help shape Brush Atelier
-            </Link>
           </div>
         </div>
       </div>

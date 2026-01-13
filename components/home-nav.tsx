@@ -110,9 +110,9 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
                     <>
                       <div className="border-t border-[#1F2933]/10 my-2"></div>
                       <button
-                        onClick={async () => {
+                        onClick={() => {
                           setIsDropdownOpen(false);
-                          await signOut({ callbackUrl: "/" });
+                          signOut({ callbackUrl: "/", redirect: true });
                         }}
                         className="block w-full text-left px-4 py-2.5 text-[#1F2933] hover:bg-[#2563EB]/10 hover:text-[#2563EB] transition-colors text-sm font-medium"
                       >

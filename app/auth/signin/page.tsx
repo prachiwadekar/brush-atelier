@@ -32,12 +32,23 @@ export default function SignInPage() {
         // Successfully signed in
         router.push("/dashboard");
       } else {
-        // Failed to sign in
-        setError("Invalid email or password");
+        // Failed to sign in - provide specific error messages
+        if (result?.error) {
+          // Check for specific error types
+          if (result.error.includes("CredentialsSignin") || result.error.includes("Invalid")) {
+            setError("Incorrect email or password. Please try again.");
+          } else if (result.error.includes("Configuration")) {
+            setError("Authentication service unavailable. Please try again later.");
+          } else {
+            setError("Sign in failed. Please check your credentials and try again.");
+          }
+        } else {
+          setError("Incorrect email or password. Please try again.");
+        }
       }
     } catch (err: any) {
       console.error("Sign in error:", err);
-      setError("An error occurred. Please try again.");
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }

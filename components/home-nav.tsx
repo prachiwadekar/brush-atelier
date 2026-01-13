@@ -28,18 +28,28 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
   return (
     <nav className="bg-[#FBF7F2]/95 backdrop-blur-md shadow-sm relative z-10 border-b border-[#1F2933]/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="flex justify-between items-center h-16 sm:h-20">
-          <div className="flex items-center gap-8 sm:gap-12">
-            <Link href="/" className="relative">
+        <div className="flex justify-between items-center h-16 sm:h-20 gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link href="/" className="relative flex-shrink-0">
               <h1 className="text-xl sm:text-3xl font-bold">
                 <span className="text-[#C2410C]">Brush</span>{" "}
                 <span className="text-[#1F2933]">Atelier</span>
-                {/* BETA Badge - Superscript */}
-                <span className="absolute -top-1 sm:-top-2 -right-10 sm:-right-12 text-[#2563EB] text-[0.5rem] sm:text-xs font-bold uppercase tracking-wider border border-[#2563EB] px-1 sm:px-1.5 py-0.5 rounded">
+                {/* BETA Badge - More prominent */}
+                <span className="absolute -top-1 sm:-top-2 -right-12 sm:-right-14 bg-[#2563EB] text-white text-[0.5rem] sm:text-xs font-bold uppercase tracking-wider px-2 py-1 rounded shadow-sm">
                   BETA
                 </span>
               </h1>
             </Link>
+          </div>
+
+          {/* Center message - Hidden on mobile, visible on tablet+ */}
+          <div className="hidden md:flex flex-1 justify-center">
+            <p className="text-xs lg:text-sm text-red-600 font-medium text-center">
+              Inviting you to send user feedback at{' '}
+              <a href="mailto:prachiwadekar@gmail.com" className="underline hover:text-red-700 transition-colors">
+                prachiwadekar@gmail.com
+              </a>
+            </p>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -79,21 +89,21 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-[#1F2933]/10 py-2 z-50">
+                <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-[#1F2933]/10 py-2 z-50">
+                  <Link
+                    href="/feedback"
+                    className="block px-4 py-3 bg-[#C2410C]/10 text-[#C2410C] hover:bg-[#C2410C]/20 transition-colors text-sm font-bold border-b border-[#C2410C]/20"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    Help Shape Brush Atelier
+                  </Link>
+
                   <Link
                     href="/about"
                     className="block px-4 py-2.5 text-[#1F2933] hover:bg-[#2563EB]/10 hover:text-[#2563EB] transition-colors text-sm font-medium"
                     onClick={() => setIsDropdownOpen(false)}
                   >
                     About Us
-                  </Link>
-
-                  <Link
-                    href="/feedback"
-                    className="block px-4 py-2.5 text-[#1F2933] hover:bg-[#2563EB]/10 hover:text-[#2563EB] transition-colors text-sm font-medium"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    Help Shape Brush Atelier
                   </Link>
 
                   {isAuthenticated && (

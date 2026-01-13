@@ -86,7 +86,7 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
                 </button>
               )}
 
-              {/* Create New Button - Show on new-artwork and portfolio pages */}
+              {/* Create + Button - Show on new-artwork and portfolio pages */}
               {(activeView === "new-artwork" || activeView === "portfolio") && (
                 <button
                   onClick={() => {
@@ -97,8 +97,7 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
                   className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-sm hover:shadow-md"
                   aria-label="Create New Art Session"
                 >
-                  <span className="hidden sm:inline">Create New</span>
-                  <span className="sm:hidden">Create</span>
+                  Create +
                 </button>
               )}
 
@@ -188,7 +187,7 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
               </svg>
-              <span>Guided Session</span>
+              <span>Create New</span>
             </button>
 
             <button

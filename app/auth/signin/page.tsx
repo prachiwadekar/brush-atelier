@@ -29,27 +29,29 @@ export default function SignInPage() {
       console.log("Sign in result:", result);
 
       if (result?.ok) {
-        // Successfully signed in
+        // Successfully signed in - redirect to dashboard
         router.push("/dashboard");
-      } else {
-        // Failed to sign in - provide specific error messages
-        if (result?.error) {
-          // Check for specific error types
-          if (result.error.includes("CredentialsSignin") || result.error.includes("Invalid")) {
-            setError("Incorrect email or password. Please try again.");
-          } else if (result.error.includes("Configuration")) {
-            setError("Authentication service unavailable. Please try again later.");
-          } else {
-            setError("Sign in failed. Please check your credentials and try again.");
-          }
-        } else {
+        return;
+      }
+
+      // Failed to sign in - show error and stop loading
+      setLoading(false);
+
+      if (result?.error) {
+        // Check for specific error types
+        if (result.error.includes("CredentialsSignin") || result.error.includes("Invalid")) {
           setError("Incorrect email or password. Please try again.");
+        } else if (result.error.includes("Configuration")) {
+          setError("Authentication service unavailable. Please try again later.");
+        } else {
+          setError("Sign in failed. Please check your credentials and try again.");
         }
+      } else {
+        setError("Incorrect email or password. Please try again.");
       }
     } catch (err: any) {
       console.error("Sign in error:", err);
       setError("An unexpected error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   };

@@ -1,18 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Check for error in URL parameters
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      if (errorParam === "CredentialsSignin") {
+        setError("Incorrect email or password. Please try again.");
+      } else {
+        setError("Authentication failed. Please try again.");
+      }
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +40,8 @@ export default function SignInPage() {
       });
 
       console.log("Sign in result:", result);
+      console.log("Result ok:", result?.ok);
+      console.log("Result error:", result?.error);
 
       if (result?.ok) {
         // Successfully signed in - redirect to dashboard
@@ -35,22 +50,16 @@ export default function SignInPage() {
       }
 
       // Failed to sign in - show error and stop loading
+      console.log("Setting error state - authentication failed");
+      const errorMessage = "Incorrect email or password. Please try again.";
+
+      setError(errorMessage);
       setLoading(false);
 
-      if (result?.error) {
-        // Check for specific error types
-        if (result.error.includes("CredentialsSignin") || result.error.includes("Invalid")) {
-          setError("Incorrect email or password. Please try again.");
-        } else if (result.error.includes("Configuration")) {
-          setError("Authentication service unavailable. Please try again later.");
-        } else {
-          setError("Sign in failed. Please check your credentials and try again.");
-        }
-      } else {
-        setError("Incorrect email or password. Please try again.");
-      }
+      console.log("Error state set to:", errorMessage);
+      console.log("Loading state set to: false");
     } catch (err: any) {
-      console.error("Sign in error:", err);
+      console.error("Sign in error (catch block):", err);
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
     }
@@ -211,5 +220,20 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#FBF7F2] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#2563EB] border-t-transparent mb-4"></div>
+          <p className="text-lg font-medium text-[#1F2933]">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignInForm />
+    </Suspense>
   );
 }

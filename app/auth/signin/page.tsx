@@ -26,12 +26,17 @@ export default function SignInPage() {
         redirect: false,
       });
 
-      if (result?.error) {
-        setError("Invalid email or password");
-      } else {
+      console.log("Sign in result:", result);
+
+      if (result?.ok) {
+        // Successfully signed in
         router.push("/dashboard");
+      } else {
+        // Failed to sign in
+        setError("Invalid email or password");
       }
     } catch (err: any) {
+      console.error("Sign in error:", err);
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);

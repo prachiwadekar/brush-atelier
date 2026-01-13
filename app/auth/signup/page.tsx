@@ -71,11 +71,27 @@ export default function SignUpPage() {
               key="logo-v2"
               unoptimized
             />
-            <h1 className="text-3xl font-bold">
+            <h1 className="text-3xl font-bold relative">
               <span className="text-[#C2410C]">Brush</span>{" "}
               <span className="text-[#1F2933]">Atelier</span>
+              <span className="absolute -top-2 -right-12 bg-[#2563EB] text-white text-[0.5rem] font-bold uppercase tracking-wider px-2 py-1 rounded shadow-sm">
+                BETA
+              </span>
             </h1>
           </Link>
+
+          {/* Feedback Banner */}
+          <div className="mb-4">
+            <div className="bg-red-500/80 px-4 py-2 rounded-lg shadow-sm">
+              <p className="text-xs sm:text-sm text-white font-bold text-center">
+                Inviting your feedback at{' '}
+                <a href="mailto:team.brushatelier@gmail.com" className="underline hover:text-white/90 transition-colors">
+                  team.brushatelier@gmail.com
+                </a>
+              </p>
+            </div>
+          </div>
+
           <h2 className="text-2xl font-semibold text-[#1F2933]">Create your account</h2>
           <p className="text-[#1F2933]/70 mt-2">
             Start your art journey today

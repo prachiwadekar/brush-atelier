@@ -31,11 +31,11 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
 
           {/* Center message - Hidden on mobile, visible on tablet+ */}
           <div className="hidden md:flex flex-1 justify-center">
-            <div className="bg-red-600 px-4 py-2 rounded-lg shadow-sm">
+            <div className="bg-red-500/80 px-4 py-2 rounded-lg shadow-sm">
               <p className="text-sm lg:text-base text-white font-bold text-center">
                 Inviting your feedback at{' '}
-                <a href="mailto:prachiwadekar@gmail.com" className="underline hover:text-white/90 transition-colors">
-                  prachiwadekar@gmail.com
+                <a href="mailto:team.brushatelier@gmail.com" className="underline hover:text-white/90 transition-colors">
+                  team.brushatelier@gmail.com
                 </a>
               </p>
             </div>

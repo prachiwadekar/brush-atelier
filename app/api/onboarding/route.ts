@@ -11,7 +11,8 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { role, bio, specialization, hourlyRate, yearsOfExperience, interests, skillLevel } = body;
+    console.log("Onboarding request body:", body);
+    const { role, bio, specialization, hourlyRate, yearsOfExperience, interests, skillLevel, goal, coachingStyle } = body;
 
     // Update user role
     await prisma.user.update({
@@ -36,20 +37,56 @@ export async function POST(req: Request) {
     } else if (role === "STUDENT") {
       const ints = Array.isArray(interests) ? interests.join(", ") : interests;
 
-      await prisma.studentProfile.create({
-        data: {
-          userId: session.user.id,
-          bio: bio || null,
-          interests: ints,
-          skillLevel: skillLevel || null,
-        },
+      // Check if student profile already exists
+      const existingProfile = await prisma.studentProfile.findUnique({
+        where: { userId: session.user.id },
       });
+
+      console.log("Existing profile check:", { userId: session.user.id, exists: !!existingProfile });
+
+      const profileData = {
+        bio: bio || null,
+        interests: ints || "General Painting",
+        skillLevel: skillLevel || null,
+        goal: goal || null,
+        coachingStyle: coachingStyle || null,
+      };
+
+      console.log("Profile data to save:", profileData);
+
+      if (existingProfile) {
+        // Update existing profile
+        console.log("Updating existing profile");
+        await prisma.studentProfile.update({
+          where: { userId: session.user.id },
+          data: profileData,
+        });
+      } else {
+        // Create new profile
+        console.log("Creating new profile");
+        await prisma.studentProfile.create({
+          data: {
+            userId: session.user.id,
+            ...profileData,
+          },
+        });
+      }
     }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("Onboarding error:", error);
     console.error("Error message:", error.message);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Error stack:", error.stack);
+
+    // Return more detailed error in development
+    const errorMessage = process.env.NODE_ENV === "development"
+      ? `${error.message || "Internal server error"}`
+      : "Internal server error";
+
+    return NextResponse.json({
+      error: errorMessage,
+      details: process.env.NODE_ENV === "development" ? error.stack : undefined
+    }, { status: 500 });
   }
 }

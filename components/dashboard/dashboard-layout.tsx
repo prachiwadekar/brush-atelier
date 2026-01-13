@@ -46,11 +46,26 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
                   key="logo-v3"
                   unoptimized
                 />
-                <h1 className="text-lg sm:text-2xl font-bold hidden sm:block">
+                <h1 className="text-lg sm:text-2xl font-bold hidden sm:block relative">
                   <span className="text-[#C2410C]">Brush</span>{" "}
                   <span className="text-[#1F2933]">Atelier</span>
+                  <span className="absolute -top-1 sm:-top-2 -right-10 sm:-right-12 bg-[#2563EB] text-white text-[0.4rem] sm:text-[0.5rem] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 sm:py-1 rounded shadow-sm">
+                    BETA
+                  </span>
                 </h1>
               </Link>
+            </div>
+
+            {/* Feedback Banner - Center */}
+            <div className="hidden lg:flex flex-1 justify-center">
+              <div className="bg-red-500/80 px-3 py-1.5 rounded-lg shadow-sm">
+                <p className="text-xs text-white font-bold text-center">
+                  Inviting your feedback at{' '}
+                  <a href="mailto:team.brushatelier@gmail.com" className="underline hover:text-white/90 transition-colors">
+                    team.brushatelier@gmail.com
+                  </a>
+                </p>
+              </div>
             </div>
 
             {/* User Info */}

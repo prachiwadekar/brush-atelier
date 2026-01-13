@@ -22,6 +22,7 @@ interface CoachStep {
   coaching_point: string;
   common_mistakes?: string;
   color_mixing?: string;
+  recommended_brush?: string;
 }
 
 // Generate an intelligent title based on image analysis
@@ -178,6 +179,7 @@ IMPORTANT: Return ONLY a JSON object with this exact structure:
       "coaching_point": "specific observation or technique to teach (1-2 sentences)",
       "common_mistakes": "common mistake artists make at this step and how to avoid it (1 sentence)",
       "color_mixing": "how to mix any specific colors for this step using basic primary colors (1-2 sentences)",
+      "recommended_brush": "which specific brush to use for this step (e.g., 'Large flat brush (1-2 inch)' or 'Small round detail brush (#2-4)' or 'Medium filbert brush')",
       "canvas_state": "detailed description of what the canvas should look like after completing this step - describe shapes, colors, values, and coverage (2-3 sentences)"
     },
     {
@@ -186,6 +188,7 @@ IMPORTANT: Return ONLY a JSON object with this exact structure:
       "coaching_point": "specific observation or technique",
       "common_mistakes": "common mistake to avoid",
       "color_mixing": "color mixing recipe if applicable",
+      "recommended_brush": "which brush to use for this step",
       "canvas_state": "what the canvas looks like after this step"
     }
     ... continue for 10-12 steps total
@@ -217,6 +220,7 @@ Each step should:
 CRITICAL: SEPARATION OF CONCERNS
 - **coaching_point**: Focus on OBSERVATION + TECHNIQUE + WHY. Explain what the learner sees in the reference, how to observe it like an artist, and why this step matters. Include physical technique guidance (brush motion, pressure). Use empathetic, patient language. NEVER include color mixing ratios here.
 - **color_mixing**: Provide ONLY the color mixing recipes using basic primaries (Red, Blue, Yellow, White, optionally Black). Include ratios, warm vs cool bias, how lighting affects the color, and how to test before committing. Explain in plain language.
+- **recommended_brush**: Specify EXACTLY which brush to use for this step. Match the brush to the task: large flat/filbert brushes (1-2 inch) for blocking in and broad areas, medium brushes (#6-10) for general painting, small round brushes (#2-4) for details and fine lines. Consider the medium (acrylic, oil, watercolor) and the coverage area. Be specific with sizes and types.
 - **canvas_state**: Describe EXACTLY what the canvas should look like after completing this step. Be specific about shapes, colors, coverage, values, and visual progress. This will be used to generate a reference image.
 
 COACHING POINT REQUIREMENTS (Empathetic Teaching Style):
@@ -269,6 +273,22 @@ CRITICAL COLOR MIXING REQUIREMENTS:
 - Make color mixing feel SAFE and EXPERIMENTAL: "It's okay to remix" "Start small" "You can always adjust"
 - For every color, explain how to make it WARMER, COOLER, LIGHTER, or DARKER
 - NEVER leave color_mixing empty if ANY color is referenced in the step
+
+Example brush recommendations (BE SPECIFIC & MATCH TO TASK):
+- "Large flat brush (1-2 inch)" - for blocking in sky gradients, covering large areas quickly
+- "Medium filbert brush (#8-10)" - for general painting of mid-sized shapes, soft edges
+- "Small round detail brush (#2-4)" - for fine details, tree branches, highlights
+- "Medium round brush (#6-8)" - for painting clouds, medium-sized shapes
+- "Large flat or mop brush (2 inch)" - for watercolor washes, large gradient areas
+- "Angled brush (1/2 inch)" - for edges, architectural details, precise strokes
+
+CRITICAL BRUSH RECOMMENDATION REQUIREMENTS:
+- ALWAYS provide a recommended_brush for EVERY step
+- Be SPECIFIC about size and type (flat, round, filbert, angled, mop, fan)
+- Match brush to the coverage area: large for backgrounds, small for details
+- Consider the technique: flat for broad strokes, round for details, filbert for soft edges
+- Include size numbers (#2-4 for small, #6-10 for medium, 1-2 inch for large)
+- Adapt to the medium: watercolor uses larger brushes, detail work uses smaller
 
 Use the image analysis above to create specific, tailored coaching steps that address the unique aspects of this particular artwork. Reference specific colors, composition elements, and techniques mentioned in the analysis.
 

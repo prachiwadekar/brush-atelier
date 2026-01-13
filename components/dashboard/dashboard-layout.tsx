@@ -55,22 +55,37 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
 
             {/* User Info */}
             <div className="flex items-center gap-1 sm:gap-2">
-              {/* New Art Button */}
-              <button
-                onClick={() => {
-                  if (onStartNewSession) {
-                    onStartNewSession();
-                  }
-                }}
-                className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-sm hover:shadow-md flex items-center gap-1.5"
-                aria-label="Start New Art Session"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                <span className="hidden sm:inline">New Art</span>
-                <span className="sm:hidden">New</span>
-              </button>
+              {/* My Portfolio Button - Show on new-artwork page */}
+              {activeView === "new-artwork" && (
+                <button
+                  onClick={() => {
+                    if (onViewChange) {
+                      onViewChange("portfolio");
+                    }
+                  }}
+                  className="bg-white hover:bg-gray-50 text-[#2563EB] border-2 border-[#2563EB] px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-sm hover:shadow-md"
+                  aria-label="View Portfolio"
+                >
+                  <span className="hidden sm:inline">My Portfolio</span>
+                  <span className="sm:hidden">Portfolio</span>
+                </button>
+              )}
+
+              {/* Create New Button - Show on new-artwork and portfolio pages */}
+              {(activeView === "new-artwork" || activeView === "portfolio") && (
+                <button
+                  onClick={() => {
+                    if (onStartNewSession) {
+                      onStartNewSession();
+                    }
+                  }}
+                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-sm hover:shadow-md"
+                  aria-label="Create New Art Session"
+                >
+                  <span className="hidden sm:inline">Create New</span>
+                  <span className="sm:hidden">Create</span>
+                </button>
+              )}
 
               {/* User Menu Dropdown */}
               <div className="relative">

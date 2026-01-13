@@ -185,6 +185,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const [showProductLinksModal, setShowProductLinksModal] = useState<boolean>(false);
   const [showSuppliesSection, setShowSuppliesSection] = useState<boolean>(true); // Expanded by default
   const [paintingComplete, setPaintingComplete] = useState<boolean>(false);
+  const [showMaterialsOverview, setShowMaterialsOverview] = useState<boolean>(false); // Show materials first after analysis
   const [showMediumButtons, setShowMediumButtons] = useState<boolean>(false);
   const [portfolioItems, setPortfolioItems] = useState<any[]>([]);
   const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(false);
@@ -195,6 +196,10 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const [artworkStatus, setArtworkStatus] = useState<"in-progress" | "complete" | null>(null);
   const [showCompleteConfirmation, setShowCompleteConfirmation] = useState(false);
   const [estimatedTime, setEstimatedTime] = useState<string | null>(null);
+  const [showColorMixModal, setShowColorMixModal] = useState(false);
+  const [selectedColorForMixing, setSelectedColorForMixing] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Critique feature state
   const [critiqueImage, setCritiqueImage] = useState<File | null>(null);
@@ -220,6 +225,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const [showFloatingChat, setShowFloatingChat] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [artworkTitle, setArtworkTitle] = useState<string | null>(null);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const tipChatEndRef = useRef<HTMLDivElement>(null);
@@ -237,10 +243,188 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     return paintingGuide.supplies || paintingGuide.quickGuide?.supplies || null;
   };
 
+  // Helper to extract all required colors including base colors needed for mixing
+  const getAllRequiredColors = () => {
+    const supplies = getSupplies();
+    if (!supplies || !supplies.paintColors) return [];
+
+    const allColors = new Set<string>();
+
+    // Add all colors from the materials list
+    supplies.paintColors.forEach((color: string) => {
+      allColors.add(color);
+
+      // Check if this color has a mixing recipe
+      const recipe = colorMixingRecipes[color];
+      if (recipe) {
+        // Extract base colors from the recipe text
+        // Recipe format: "Mix Color1 + Color2 + touch of Color3"
+        const recipeText = recipe.recipe;
+
+        // Check for each standard color in the recipe
+        standardColors.forEach(standardColor => {
+          if (recipeText.includes(standardColor)) {
+            allColors.add(standardColor);
+          }
+        });
+
+        // Also check for other named colors in the mixing recipes
+        Object.keys(colorMixingRecipes).forEach(mixableColor => {
+          if (recipeText.includes(mixableColor) && mixableColor !== color) {
+            allColors.add(mixableColor);
+          }
+        });
+      }
+    });
+
+    // Convert back to array and sort: standard colors first, then others
+    const colorArray = Array.from(allColors);
+    return colorArray.sort((a, b) => {
+      const aIsStandard = isStandardColor(a);
+      const bIsStandard = isStandardColor(b);
+      if (aIsStandard && !bIsStandard) return -1;
+      if (!aIsStandard && bIsStandard) return 1;
+      return 0;
+    });
+  };
+
   // Helper to get product links from paintingGuide (supports both old and new format)
   const getProductLinks = () => {
     if (!paintingGuide) return null;
     return paintingGuide.productLinks || paintingGuide.quickGuide?.productLinks || null;
+  };
+
+  // Define standard/essential colors that users should buy
+  const standardColors = [
+    'Titanium White',
+    'Cadmium Red',
+    'Cadmium Yellow',
+    'Ultramarine Blue',
+    'Ivory Black'
+  ];
+
+  // Define mixing recipes for non-standard colors
+  const colorMixingRecipes: { [key: string]: { recipe: string; description: string } } = {
+    'Raw Umber': {
+      recipe: 'Mix Burnt Sienna + Ultramarine Blue + touch of Ivory Black',
+      description: 'A warm, earthy brown perfect for shadows and natural tones.'
+    },
+    'Burnt Sienna': {
+      recipe: 'Mix Cadmium Red + Cadmium Yellow (2:1 ratio) + tiny touch of Ivory Black',
+      description: 'A reddish-brown earth tone, great for warm shadows.'
+    },
+    'Yellow Ochre': {
+      recipe: 'Mix Cadmium Yellow + tiny touch of Cadmium Red + tiny touch of Ivory Black',
+      description: 'A muted, earthy yellow perfect for natural scenes.'
+    },
+    'Viridian Green': {
+      recipe: 'Mix Ultramarine Blue + Cadmium Yellow + touch of Ivory Black',
+      description: 'A deep, cool green ideal for foliage and landscapes.'
+    },
+    'Alizarin Crimson': {
+      recipe: 'Mix Cadmium Red + tiny touch of Ultramarine Blue',
+      description: 'A deep, cool red perfect for rich darks and florals.'
+    },
+    'Cobalt Blue': {
+      recipe: 'Mix Ultramarine Blue + Titanium White (for lighter tone)',
+      description: 'A lighter, cooler blue for skies and water.'
+    },
+    'Cerulean Blue': {
+      recipe: 'Mix Ultramarine Blue + Titanium White + tiny touch of Cadmium Yellow',
+      description: 'A soft, sky blue perfect for atmospheric effects.'
+    },
+    'Sap Green': {
+      recipe: 'Mix Cadmium Yellow + Ultramarine Blue (1:1 ratio)',
+      description: 'A natural, versatile green for landscapes.'
+    },
+    'Payne\'s Gray': {
+      recipe: 'Mix Ultramarine Blue + Ivory Black + tiny touch of Cadmium Red',
+      description: 'A cool, neutral gray for shadows and overcast skies.'
+    }
+  };
+
+  // Check if a color is standard/essential
+  const isStandardColor = (colorName: string): boolean => {
+    return standardColors.some(std => colorName.toLowerCase().includes(std.toLowerCase()));
+  };
+
+  // Get mixing recipe for a color
+  const getMixingRecipe = (colorName: string) => {
+    // Check for exact match or partial match
+    const exactMatch = colorMixingRecipes[colorName];
+    if (exactMatch) return { colorName, ...exactMatch };
+
+    // Check for partial matches
+    for (const [key, value] of Object.entries(colorMixingRecipes)) {
+      if (colorName.toLowerCase().includes(key.toLowerCase()) ||
+          key.toLowerCase().includes(colorName.toLowerCase())) {
+        return { colorName, ...value };
+      }
+    }
+
+    // Default recipe for unknown colors
+    return {
+      colorName,
+      recipe: 'This is a specialty color. Try mixing primary colors to approximate it.',
+      description: 'Experiment with Cadmium Red, Cadmium Yellow, Ultramarine Blue, and Titanium White to create similar tones.'
+    };
+  };
+
+  // Loading messages that rotate every 10 seconds
+  const loadingMessages = [
+    "Hang tight, almost there! We're preparing the final details of your lesson...",
+    "Stay with us! Your personalized painting guide is being crafted...",
+    "Just a moment longer! We're analyzing colors and techniques...",
+    "Almost ready! Finalizing your step-by-step coaching plan...",
+    "Putting the finishing touches on your lesson...",
+    "Your custom painting guide is nearly complete...",
+  ];
+
+  // Text-to-speech functions
+  const speakText = (text: string) => {
+    // Stop any ongoing speech
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9; // Slightly slower for clarity
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    speechSynthesisRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  const speakCurrentStep = () => {
+    if (!paintingGuide?.coachPlan || !paintingGuide.coachPlan[currentTipPage]) return;
+
+    const step = paintingGuide.coachPlan[currentTipPage];
+    const stepNumber = currentTipPage + 1;
+    const totalSteps = paintingGuide.coachPlan.length;
+
+    let textToSpeak = `Step ${stepNumber} of ${totalSteps}. ${step.focus_area}. ${step.coaching_point}`;
+
+    if (step.common_mistakes) {
+      textToSpeak += ` Caution: ${step.common_mistakes}`;
+    }
+
+    if (step.color_mixing) {
+      textToSpeak += ` Color mixing guide: ${step.color_mixing}`;
+    }
+
+    speakText(textToSpeak);
   };
 
   // Initialize chatbot with greeting only on first load (not when switching tabs or resuming)
@@ -270,6 +454,34 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
       setShowFloatingChat(false);
     }
   }, [activeView]);
+
+  // Cleanup speech synthesis on unmount or page change
+  useEffect(() => {
+    return () => {
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  // Stop speech when changing steps
+  useEffect(() => {
+    stopSpeaking();
+  }, [currentTipPage]);
+
+  // Rotate loading messages every 10 seconds when analyzing
+  useEffect(() => {
+    if (isAnalyzing && progress >= 90) {
+      const interval = setInterval(() => {
+        setLoadingMessageIndex(prev => (prev + 1) % loadingMessages.length);
+      }, 10000); // 10 seconds
+
+      return () => clearInterval(interval);
+    } else {
+      // Reset to first message when not in late-stage loading
+      setLoadingMessageIndex(0);
+    }
+  }, [isAnalyzing, progress]);
 
   // Expose handleClearImage to parent via callback
   useEffect(() => {
@@ -616,6 +828,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
             { role: 'bot', message: data.message }
           ]);
           setIsAnalyzing(false);
+          setShowMaterialsOverview(true); // Show materials overview first
           setProgress(0);
           setArtworkStatus("in-progress");
         }, 500);
@@ -780,6 +993,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     setTipChatHistory([]); // Clear tip chat history for new session
     setShowFloatingChat(false); // Close floating chat widget
     setArtworkTitle(null); // Clear artwork title
+    setShowMaterialsOverview(false); // Reset materials overview
 
     // Switch to Art Coaching view
     onViewChange("new-artwork");
@@ -1073,6 +1287,100 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                       )}
                     </div>
                   </div>
+
+                {/* Our Recommendations Section */}
+                <div className="w-full max-w-4xl mx-auto mt-8">
+                  <h3 className="text-xl font-bold text-[#1F2933] mb-4">Our Recommendations</h3>
+                  <p className="text-sm text-[#1F2933]/70 mb-4">
+                    Not sure what to paint? Try one of these curated reference images to get started.
+                  </p>
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {/* Sample Reference 1 */}
+                    <button
+                      onClick={() => {
+                        // TODO: Handle sample image selection
+                        console.log('Sample 1 clicked');
+                      }}
+                      className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                        <span className="text-white text-sm font-semibold">Sunset Landscape</span>
+                      </div>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
+                    </button>
+
+                    {/* Sample Reference 2 */}
+                    <button
+                      onClick={() => {
+                        // TODO: Handle sample image selection
+                        console.log('Sample 2 clicked');
+                      }}
+                      className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                        <span className="text-white text-sm font-semibold">Ocean Waves</span>
+                      </div>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
+                    </button>
+
+                    {/* Sample Reference 3 */}
+                    <button
+                      onClick={() => {
+                        // TODO: Handle sample image selection
+                        console.log('Sample 3 clicked');
+                      }}
+                      className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center">
+                        <span className="text-white text-sm font-semibold">Forest Path</span>
+                      </div>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
+                    </button>
+
+                    {/* Sample Reference 4 */}
+                    <button
+                      onClick={() => {
+                        // TODO: Handle sample image selection
+                        console.log('Sample 4 clicked');
+                      }}
+                      className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                        <span className="text-white text-sm font-semibold">Sunflower Field</span>
+                      </div>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
+                    </button>
+
+                    {/* Sample Reference 5 */}
+                    <button
+                      onClick={() => {
+                        // TODO: Handle sample image selection
+                        console.log('Sample 5 clicked');
+                      }}
+                      className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center">
+                        <span className="text-white text-sm font-semibold">Cherry Blossoms</span>
+                      </div>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
+                    </button>
+
+                    {/* Sample Reference 6 */}
+                    <button
+                      onClick={() => {
+                        // TODO: Handle sample image selection
+                        console.log('Sample 6 clicked');
+                      }}
+                      className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-blue-600 flex items-center justify-center">
+                        <span className="text-white text-sm font-semibold">Mountain Vista</span>
+                      </div>
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               <>
@@ -1123,6 +1431,22 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                               <h3 className="text-sm font-semibold text-[#1F2933]">{artworkTitle}</h3>
                             </div>
                           )}
+
+                          {/* Ask AI Coach Button - Only show after analysis is complete */}
+                          {paintingGuide && (
+                            <button
+                              onClick={() => {
+                                console.log('Ask AI Coach button clicked');
+                                setShowFloatingChat(!showFloatingChat);
+                              }}
+                              className="w-full flex items-center justify-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg font-semibold text-sm"
+                              title="Ask AI Coach"
+                              aria-label="Open chat with AI coach"
+                            >
+                              <span className="text-lg">✋</span>
+                              Coach, can you help?
+                            </button>
+                          )}
                         </div>
                       )}
 
@@ -1169,6 +1493,118 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         </div>
                       )}
                     </div>
+
+                    {/* Color Mixing Modal */}
+                    {showColorMixModal && selectedColorForMixing && (
+                      <div
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        onClick={() => setShowColorMixModal(false)}
+                      >
+                        <div
+                          className="bg-white rounded-xl shadow-2xl max-w-lg w-full"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {/* Modal Header */}
+                          <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4 rounded-t-xl">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-10 h-10 rounded-full border-3 border-white shadow-lg"
+                                  style={{ backgroundColor: getColorHex(selectedColorForMixing) }}
+                                />
+                                <div>
+                                  <h3 className="text-lg font-bold text-white">
+                                    {selectedColorForMixing}
+                                  </h3>
+                                  {isStandardColor(selectedColorForMixing) ? (
+                                    <p className="text-xs text-white/90">Essential Color</p>
+                                  ) : (
+                                    <p className="text-xs text-white/90">Mixing Guide</p>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => setShowColorMixModal(false)}
+                                className="text-white hover:text-white/80 transition-colors text-2xl leading-none"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Modal Content */}
+                          <div className="p-6">
+                            {isStandardColor(selectedColorForMixing) ? (
+                              <div className="space-y-4">
+                                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                                  <div className="flex items-start gap-3">
+                                    <span className="text-2xl">🎨</span>
+                                    <div>
+                                      <h4 className="font-bold text-blue-900 mb-1">Essential Color</h4>
+                                      <p className="text-sm text-blue-800 leading-relaxed">
+                                        This is a basic, essential color that you should have in your paint kit.
+                                        We recommend purchasing {selectedColorForMixing} from an art supply store as it's
+                                        a foundational color used in most paintings.
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+                                  <p className="text-xs text-amber-800">
+                                    <strong>Pro Tip:</strong> Titanium White is the most used color in painting.
+                                    Invest in a larger tube of high-quality Titanium White along with the primary colors
+                                    (Cadmium Red, Cadmium Yellow, Ultramarine Blue) and Ivory Black.
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-4">
+                                <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg">
+                                  <div className="flex items-start gap-3">
+                                    <span className="text-2xl">🎨</span>
+                                    <div>
+                                      <h4 className="font-bold text-purple-900 mb-2">How to Mix This Color</h4>
+                                      <p className="text-sm text-purple-800 leading-relaxed font-medium">
+                                        {getMixingRecipe(selectedColorForMixing).recipe}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                  <p className="text-sm text-gray-700 leading-relaxed">
+                                    {getMixingRecipe(selectedColorForMixing).description}
+                                  </p>
+                                </div>
+
+                                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                                  <p className="text-xs text-green-800">
+                                    <strong>Mixing Tip:</strong> Start with small amounts and gradually add colors.
+                                    It's easier to darken a color than to lighten it. Always mix more than you think
+                                    you'll need - it's hard to recreate the exact same shade later!
+                                  </p>
+                                </div>
+
+                                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                                  <p className="text-xs text-blue-800">
+                                    <strong>Prefer not to mix?</strong> You can also purchase {selectedColorForMixing} directly
+                                    from an art supply store if you'd rather have it ready-made. Many artists keep both
+                                    mixed and pre-made colors in their palette!
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            <button
+                              onClick={() => setShowColorMixModal(false)}
+                              className="mt-6 w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
+                            >
+                              Got It!
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Product Links Modal */}
                     {showProductLinksModal && getProductLinks() && (
@@ -1252,6 +1688,11 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                               </svg>
                             </div>
                             <h3 className="text-xl font-bold text-[#1F2933]">Analyzing Your Reference</h3>
+                            {progress >= 90 && (
+                              <p className="text-sm text-blue-600 font-medium mt-3 animate-pulse">
+                                {loadingMessages[loadingMessageIndex]}
+                              </p>
+                            )}
                           </div>
                           <div className="space-y-3">
                             <div className="flex items-center justify-between text-sm font-medium text-[#1F2933]">
@@ -1269,6 +1710,101 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                       </div>
                     )}
 
+                    {/* Materials Overview Screen - Shows first after analysis */}
+                    {showMaterialsOverview && paintingGuide && getSupplies() && (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="bg-white rounded-xl shadow-lg p-8 max-w-3xl w-full">
+                          {/* Header */}
+                          <div className="text-center mb-6">
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-blue-600">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+                              </svg>
+                            </div>
+                            <h3 className="text-2xl font-bold text-[#1F2933] mb-2">Materials Needed</h3>
+                            <p className="text-sm text-[#1F2933]/70">Gather these supplies before starting your painting</p>
+                          </div>
+
+                          {/* Materials Grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            {/* Paint Colors */}
+                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-xl">🎨</span>
+                                <h5 className="font-bold text-[#1F2933]">Paint Colors</h5>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {getAllRequiredColors().map((color: string, index: number) => (
+                                  <div
+                                    key={index}
+                                    className="w-10 h-10 rounded-full border-2 border-gray-300 hover:border-blue-500 transition-all cursor-pointer hover:scale-110 relative group"
+                                    style={{ backgroundColor: getColorHex(color) }}
+                                    onClick={() => {
+                                      setSelectedColorForMixing(color);
+                                      setShowColorMixModal(true);
+                                    }}
+                                  >
+                                    {/* Tooltip on hover - positioned to avoid cutoff */}
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg min-w-max">
+                                      <div className="font-semibold text-center">{color}</div>
+                                      <div className="text-[10px] text-gray-300 mt-0.5 text-center">
+                                        {isStandardColor(color) ? 'Primary Color' : 'Click for mixing guide'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Brushes */}
+                            <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-xl">🖌️</span>
+                                <h5 className="font-bold text-[#1F2933]">Brushes</h5>
+                              </div>
+                              <ul className="space-y-1">
+                                {getSupplies()!.brushes.map((brush: string, index: number) => (
+                                  <li key={index} className="flex items-start gap-2 text-xs text-[#1F2933]">
+                                    <span className="text-orange-600 mt-0.5">•</span>
+                                    <span>{brush}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {/* Other Materials */}
+                            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-xl">✨</span>
+                                <h5 className="font-bold text-[#1F2933]">Other Materials</h5>
+                              </div>
+                              <ul className="space-y-1">
+                                {getSupplies()!.otherMaterials.map((material: string, index: number) => (
+                                  <li key={index} className="flex items-start gap-2 text-xs text-[#1F2933]">
+                                    <span className="text-emerald-600 mt-0.5">•</span>
+                                    <span>{material}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+
+                          {/* Call to Action Button */}
+                          <div className="text-center">
+                            <button
+                              onClick={() => setShowMaterialsOverview(false)}
+                              className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-8 py-3 rounded-full font-bold text-base transition-all shadow-lg hover:shadow-xl"
+                            >
+                              Take Me to My Painting Lesson
+                            </button>
+                            <p className="text-xs text-[#1F2933]/60 mt-3">
+                              We will show you this materials information as part of our lesson too
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Guidance Section - Shows 2 tips at a time */}
                     {(() => {
                       console.log('Guidance Section Check:', {
@@ -1280,16 +1816,42 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                       });
                       return null;
                     })()}
-                    {paintingGuide && paintingGuide.coachPlan && paintingGuide.coachPlan.length > 0 && (
+                    {!showMaterialsOverview && paintingGuide && paintingGuide.coachPlan && paintingGuide.coachPlan.length > 0 && (
                       <div className="bg-white rounded-lg border-2 border-gray-200 p-4 mt-4 overflow-hidden flex-1 flex flex-col">
                         {/* Guidance Content */}
                         <div className="relative flex-1 flex flex-col">
                           <div className="flex-1 flex flex-col h-full">
-                              {/* Phase Label */}
-                              <div className="mb-3">
+                              {/* Phase Label with Voiceover Button */}
+                              <div className="mb-3 flex items-center justify-between">
                                 <span className="text-base font-bold text-[#1F2933]">
                                   {paintingGuide.coachPlan[currentTipPage].focus_area}
                                 </span>
+                                <button
+                                  onClick={() => isSpeaking ? stopSpeaking() : speakCurrentStep()}
+                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                                    isSpeaking
+                                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                  }`}
+                                  title={isSpeaking ? 'Stop voiceover' : 'Listen to step instructions'}
+                                >
+                                  {isSpeaking ? (
+                                    <>
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                        <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
+                                      </svg>
+                                      Stop
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                        <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 001.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06zM18.584 5.106a.75.75 0 011.06 0c3.808 3.807 3.808 9.98 0 13.788a.75.75 0 11-1.06-1.06 8.25 8.25 0 000-11.668.75.75 0 010-1.06z" />
+                                        <path d="M15.932 7.757a.75.75 0 011.061 0 6 6 0 010 8.486.75.75 0 01-1.06-1.061 4.5 4.5 0 000-6.364.75.75 0 010-1.06z" />
+                                      </svg>
+                                      Listen
+                                    </>
+                                  )}
+                                </button>
                               </div>
 
                               {/* Coaching Point */}
@@ -1301,6 +1863,41 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
                               {/* Full Width Sections Below */}
                               <div>
+                            {/* Recommended Brush & Color Mixing - Side by Side */}
+                            {(paintingGuide.coachPlan[currentTipPage].recommended_brush || paintingGuide.coachPlan[currentTipPage].color_mixing) && (
+                              <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {/* Recommended Brush */}
+                                {paintingGuide.coachPlan[currentTipPage].recommended_brush && (
+                                  <div className="p-3 bg-green-50 border-l-4 border-green-400 rounded-r-lg">
+                                    <h4 className="text-sm font-bold text-green-900 mb-2 flex items-center gap-2">
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+                                      </svg>
+                                      Recommended Brush
+                                    </h4>
+                                    <p className="text-sm text-green-800 leading-relaxed">
+                                      {paintingGuide.coachPlan[currentTipPage].recommended_brush}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Color Mixing Guide */}
+                                {paintingGuide.coachPlan[currentTipPage].color_mixing && (
+                                  <div className="p-3 bg-purple-50 border-l-4 border-purple-400 rounded-r-lg">
+                                    <h4 className="text-sm font-bold text-purple-900 mb-2 flex items-center gap-2">
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+                                      </svg>
+                                      Color Mixing Guide
+                                    </h4>
+                                    <p className="text-sm text-purple-800 leading-relaxed">
+                                      {paintingGuide.coachPlan[currentTipPage].color_mixing}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                             {/* Caution */}
                             {paintingGuide.coachPlan[currentTipPage].common_mistakes && (
                               <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
@@ -1316,20 +1913,64 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                               </div>
                             )}
 
-                            {/* Color Mixing Guide */}
-                            {paintingGuide.coachPlan[currentTipPage].color_mixing && (
-                              <div className="mb-4 p-3 bg-purple-50 border-l-4 border-purple-400 rounded-r-lg">
-                                <h4 className="text-sm font-bold text-purple-900 mb-2 flex items-center gap-2">
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
-                                  </svg>
-                                  Color Mixing Guide
-                                </h4>
-                                <p className="text-sm text-purple-800 leading-relaxed">
-                                  {paintingGuide.coachPlan[currentTipPage].color_mixing}
-                                </p>
-                              </div>
-                            )}
+                            {/* Navigation Section */}
+                            <div className="flex items-center justify-center gap-2 mb-4">
+                              {/* Back to Start Icon */}
+                              <button
+                                onClick={() => setCurrentTipPage(0)}
+                                disabled={currentTipPage === 0}
+                                className={`p-1 rounded-lg transition-all ${
+                                  currentTipPage === 0
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
+                                }`}
+                                title="Back to start"
+                                aria-label="Back to start"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
+                                </svg>
+                              </button>
+
+                              {/* Previous Icon */}
+                              <button
+                                onClick={() => setCurrentTipPage(Math.max(0, currentTipPage - 1))}
+                                disabled={currentTipPage === 0}
+                                className={`p-1 rounded-lg transition-all ${
+                                  currentTipPage === 0
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
+                                }`}
+                                title="Previous"
+                                aria-label="Previous"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                                </svg>
+                              </button>
+
+                              {/* Page Indicator */}
+                              <span className="text-xs text-[#1F2933]/60 min-w-[50px] text-center">
+                                {currentTipPage + 1} / {paintingGuide.coachPlan.length}
+                              </span>
+
+                              {/* Next Icon */}
+                              <button
+                                onClick={() => setCurrentTipPage(Math.min(paintingGuide.coachPlan.length - 1, currentTipPage + 1))}
+                                disabled={currentTipPage === paintingGuide.coachPlan.length - 1}
+                                className={`p-1 rounded-lg transition-all ${
+                                  currentTipPage === paintingGuide.coachPlan.length - 1
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
+                                }`}
+                                title="Next"
+                                aria-label="Next"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                </svg>
+                              </button>
+                            </div>
 
                             {/* Materials Section */}
                             {getSupplies() && (
@@ -1350,7 +1991,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 </div>
 
                                 {showSuppliesSection && (
-                                  <div className="space-y-3 text-sm">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                                     {/* Paint Colors */}
                                     <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                                       <div className="flex items-center gap-2 mb-2">
@@ -1358,13 +1999,23 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                         <h5 className="font-bold text-[#1F2933]">Paint Colors</h5>
                                       </div>
                                       <div className="flex flex-wrap gap-2">
-                                        {getSupplies()!.paintColors.map((color: string, index: number) => (
-                                          <div key={index} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded border border-gray-200">
-                                            <div
-                                              className="w-4 h-4 rounded-full border border-gray-300"
-                                              style={{ backgroundColor: getColorHex(color) }}
-                                            />
-                                            <span className="text-xs text-[#1F2933]">{color}</span>
+                                        {getAllRequiredColors().map((color: string, index: number) => (
+                                          <div
+                                            key={index}
+                                            className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-blue-500 transition-all cursor-pointer hover:scale-110 relative group"
+                                            style={{ backgroundColor: getColorHex(color) }}
+                                            onClick={() => {
+                                              setSelectedColorForMixing(color);
+                                              setShowColorMixModal(true);
+                                            }}
+                                          >
+                                            {/* Tooltip on hover - positioned to avoid cutoff */}
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg min-w-max">
+                                              <div className="font-semibold text-center">{color}</div>
+                                              <div className="text-[10px] text-gray-300 mt-0.5 text-center">
+                                                {isStandardColor(color) ? 'Primary Color' : 'Click for mixing guide'}
+                                              </div>
+                                            </div>
                                           </div>
                                         ))}
                                       </div>
@@ -1407,85 +2058,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                             )}
 
                             </div>
-
-                              {/* Navigation and Ask Coach Section */}
-                              <div className="grid grid-cols-1 sm:grid-cols-[1fr,auto] gap-3 sm:gap-4">
-                                {/* Left Column - Navigation Icons */}
-                                <div className="flex items-center gap-2">
-                                {/* Back to Start Icon */}
-                                <button
-                                  onClick={() => setCurrentTipPage(0)}
-                                  disabled={currentTipPage === 0}
-                                  className={`p-1 rounded-lg transition-all ${
-                                    currentTipPage === 0
-                                      ? 'text-gray-300 cursor-not-allowed'
-                                      : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
-                                  }`}
-                                  title="Back to start"
-                                  aria-label="Back to start"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
-                                  </svg>
-                                </button>
-
-                                {/* Previous Icon */}
-                                <button
-                                  onClick={() => setCurrentTipPage(Math.max(0, currentTipPage - 1))}
-                                  disabled={currentTipPage === 0}
-                                  className={`p-1 rounded-lg transition-all ${
-                                    currentTipPage === 0
-                                      ? 'text-gray-300 cursor-not-allowed'
-                                      : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
-                                  }`}
-                                  title="Previous"
-                                  aria-label="Previous"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                                  </svg>
-                                </button>
-
-                                {/* Page Indicator */}
-                                <span className="text-xs text-[#1F2933]/60 min-w-[50px] text-center">
-                                  {currentTipPage + 1} / {paintingGuide.coachPlan.length}
-                                </span>
-
-                                {/* Next Icon */}
-                                <button
-                                  onClick={() => setCurrentTipPage(Math.min(paintingGuide.coachPlan.length - 1, currentTipPage + 1))}
-                                  disabled={currentTipPage === paintingGuide.length - 1}
-                                  className={`p-1 rounded-lg transition-all ${
-                                    currentTipPage === paintingGuide.coachPlan.length - 1
-                                      ? 'text-gray-300 cursor-not-allowed'
-                                      : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
-                                  }`}
-                                  title="Next"
-                                  aria-label="Next"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                                  </svg>
-                                </button>
-                                </div>
-
-                                {/* Right Column - Ask AI Coach Button */}
-                                <div className="flex items-center justify-end">
-                                  <button
-                                    onClick={() => {
-                                      console.log('Ask AI Coach button clicked');
-                                      setShowFloatingChat(!showFloatingChat);
-                                    }}
-                                    className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-full p-3 shadow-lg transition-all hover:scale-110"
-                                    title="Ask AI Coach"
-                                    aria-label="Open chat with AI coach"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-                                    </svg>
-                                  </button>
-                                </div>
-                              </div>
                           </div>
                         </div>
                       </div>
@@ -1626,7 +2198,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                   <p className="text-sm text-[#1F2933]/50">Create some artwork in the "Guided Session" tab and add them to your portfolio!</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {portfolioItems.map((item) => (
                     <div key={item.id} className="bg-white rounded-lg border-2 border-gray-200 overflow-hidden hover:shadow-lg transition-all">
                       <div className="relative aspect-square bg-gray-100">
@@ -1637,7 +2209,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                           className="object-contain"
                         />
                       </div>
-                      <div className="p-4">
+                      <div className="p-3">
                         <h4 className="font-semibold text-[#1F2933] mb-1">{item.title}</h4>
                         {item.description && (
                           <p className="text-sm text-[#1F2933]/70 mb-2">{item.description}</p>
@@ -2083,7 +2655,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                   <h3 className="text-lg font-bold text-[#1F2933]">Paint Colors</h3>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  {getSupplies()!.paintColors.map((color: string, index: number) => (
+                  {getAllRequiredColors().map((color: string, index: number) => (
                     <div key={index} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
                       <div
                         className="w-6 h-6 rounded-full border-2 border-gray-300"

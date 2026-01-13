@@ -102,30 +102,74 @@ if (process.env.PINTEREST_CLIENT_ID && process.env.PINTEREST_CLIENT_SECRET) {
   } as any);
 }
 
+// Create a custom adapter that sets default role for new users
+const customAdapter = {
+  ...PrismaAdapter(prisma),
+  async createUser(data: any) {
+    return prisma.user.create({
+      data: {
+        ...data,
+        role: data.role || "STUDENT", // Default to STUDENT if no role provided
+      },
+    });
+  },
+};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // adapter: PrismaAdapter(prisma), // Disabled - using JWT strategy instead
+  adapter: customAdapter as any, // Use custom adapter with default role
   providers,
   session: {
-    strategy: "jwt",
+    strategy: "jwt", // Keep JWT for better performance with OAuth
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      // Check if user is trying to sign in with OAuth but already has a password-based account
+      if (account?.provider === "google" && user.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          select: { password: true, id: true },
+        });
+
+        // If user exists with a password, they signed up with email/password
+        // Don't allow Google sign-in for this account
+        if (existingUser && existingUser.password) {
+          console.error(`User ${user.email} tried to sign in with Google but has a password-based account`);
+          return false; // Reject the sign-in
+        }
+      }
+
+      return true; // Allow sign in
+    },
+    async jwt({ token, user, account }) {
+      // Initial sign in
       if (user) {
         token.id = user.id;
+        token.role = user.role;
+      }
+
+      // Fetch user data from database for each request
+      if (token.id) {
         const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { role: true },
+          where: { id: token.id as string },
+          select: { role: true, email: true, name: true, image: true },
         });
         if (dbUser) {
           token.role = dbUser.role;
+          token.email = dbUser.email;
+          token.name = dbUser.name;
+          token.picture = dbUser.image;
         }
       }
+
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token) {
         session.user.id = token.id as string;
         session.user.role = token.role as any;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
+        session.user.image = token.picture as string;
       }
       return session;
     },

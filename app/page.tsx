@@ -90,7 +90,7 @@ export default async function HomePage() {
                   href="/artists/join"
                   className="bg-[#2563EB] text-white px-8 py-3 rounded-full hover:bg-[#1D4ED8] transition-all shadow-md hover:shadow-lg font-bold text-base whitespace-nowrap"
                 >
-                  Join as Coach
+                  Apply
                 </Link>
               </div>
             </div>

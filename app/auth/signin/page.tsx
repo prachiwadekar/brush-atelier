@@ -39,9 +39,12 @@ function SignInForm() {
         redirect: false,
       });
 
-      console.log("Sign in result:", result);
-      console.log("Result ok:", result?.ok);
-      console.log("Result error:", result?.error);
+      if (result?.error) {
+        // Authentication failed - show error message
+        setError("Incorrect email or password. Please try again.");
+        setLoading(false);
+        return;
+      }
 
       if (result?.ok) {
         // Successfully signed in - redirect to dashboard
@@ -49,15 +52,9 @@ function SignInForm() {
         return;
       }
 
-      // Failed to sign in - show error and stop loading
-      console.log("Setting error state - authentication failed");
-      const errorMessage = "Incorrect email or password. Please try again.";
-
-      setError(errorMessage);
+      // Unexpected state - show generic error
+      setError("An unexpected error occurred. Please try again.");
       setLoading(false);
-
-      console.log("Error state set to:", errorMessage);
-      console.log("Loading state set to: false");
     } catch (err: any) {
       console.error("Sign in error (catch block):", err);
       setError("An unexpected error occurred. Please try again.");

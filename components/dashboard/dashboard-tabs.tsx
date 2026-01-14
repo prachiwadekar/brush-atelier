@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { REFERENCE_LESSONS } from "@/lib/reference-lessons";
 
 // Image compression utility
 async function compressImage(file: File, maxSizeBytes: number): Promise<File> {
@@ -88,8 +89,8 @@ interface DashboardTabsProps {
       bio: string | null;
     } | null;
   };
-  activeView: "portfolio" | "new-artwork" | "critique";
-  onViewChange: (view: "portfolio" | "new-artwork" | "critique") => void;
+  activeView: "portfolio" | "new-artwork" | "critique" | "skills";
+  onViewChange: (view: "portfolio" | "new-artwork" | "critique" | "skills") => void;
   onStartNewSession?: { current: any };
 }
 
@@ -200,6 +201,9 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const [selectedColorForMixing, setSelectedColorForMixing] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const [feedbackType, setFeedbackType] = useState<'thumbs-up' | 'thumbs-down' | null>(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackComment, setFeedbackComment] = useState("");
 
   // Critique feature state
   const [critiqueImage, setCritiqueImage] = useState<File | null>(null);
@@ -425,6 +429,48 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     }
 
     speakText(textToSpeak);
+  };
+
+  const handleFeedback = (type: 'thumbs-up' | 'thumbs-down') => {
+    setFeedbackType(type);
+    setShowFeedbackModal(true);
+  };
+
+  const submitFeedback = async () => {
+    try {
+      // Send feedback to API
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          feedbackType,
+          message: feedbackComment,
+          userName: userWithProfile.name,
+          email: '', // Email not directly available in userWithProfile
+          currentStep: currentTipPage,
+          sessionId: coachingSessionId
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Feedback sent successfully:', data);
+      } else {
+        console.error('Failed to send feedback:', data);
+      }
+    } catch (error) {
+      console.error('Error sending feedback:', error);
+    }
+
+    // Close modal and reset state
+    setShowFeedbackModal(false);
+    setFeedbackComment("");
+
+    // Show success message
+    alert('Thank you for your feedback!');
   };
 
   // Initialize chatbot with greeting only on first load (not when switching tabs or resuming)
@@ -839,6 +885,105 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
       }
     } catch (error) {
       console.error("=== ERROR starting coaching session ===", error);
+      setError(`Error: ${error instanceof Error ? error.message : "Something went wrong"}`);
+      setIsAnalyzing(false);
+      clearInterval(progressInterval);
+    } finally {
+      clearInterval(progressInterval);
+    }
+  };
+
+  const handleReferenceImageClick = async (imageName: string) => {
+    console.log("=== LOADING REFERENCE IMAGE SESSION ===", imageName);
+
+    // Get the pre-generated lesson for this image
+    const lesson = REFERENCE_LESSONS[imageName];
+    if (!lesson) {
+      console.error("No lesson found for image:", imageName);
+      setError("This reference image is not available yet.");
+      return;
+    }
+
+    // Show loading state
+    setIsAnalyzing(true);
+    setError(null);
+    setProgress(0);
+
+    // Simulate progress for better UX
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 95) return prev;
+        return prev + Math.random() * 20;
+      });
+    }, 200);
+
+    try {
+      // Simulate loading time
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setProgress(100);
+
+      // Set the preview URL to the reference image
+      setPreviewUrl(lesson.imageUrl);
+
+      // Set session state (no actual session ID since this is pre-generated)
+      setCoachingSessionId(null); // No DB session for reference images
+      setCurrentStep(0);
+      setTotalSteps(lesson.coachPlan.length);
+      setSelectedMedium(lesson.medium);
+
+      // Parse the materials guide string into structured format
+      const materialsText = lesson.materialsGuide;
+
+      // Extract brushes (lines starting with "-" under "Brushes Needed:")
+      const brushMatches = materialsText.match(/\*\*Brushes Needed:\*\*\s*((?:- .+\n?)+)/);
+      const brushes = brushMatches
+        ? brushMatches[1].split('\n').filter(line => line.trim().startsWith('-')).map(line => line.replace(/^-\s*/, '').trim())
+        : [];
+
+      // Extract colors (lines starting with "-" under "Primary Colors:")
+      const colorMatches = materialsText.match(/\*\*Primary Colors:\*\*\s*((?:- .+\n?)+)/);
+      const paintColors = colorMatches
+        ? colorMatches[1].split('\n').filter(line => line.trim().startsWith('-')).map(line => line.replace(/^-\s*/, '').trim())
+        : [];
+
+      // Extract canvas info
+      const canvasMatches = materialsText.match(/\*\*Canvas:\*\*\s*(.+)/);
+      const canvas = canvasMatches ? canvasMatches[1].trim() : '';
+
+      // Create the painting guide structure expected by the UI
+      const paintingGuideData = {
+        coachPlan: lesson.coachPlan,
+        quickGuide: {
+          supplies: {
+            paintColors: paintColors,
+            brushes: brushes,
+            palette: ['Palette for mixing', 'Paper towels', 'Water cup'],
+            otherMaterials: canvas ? [canvas, 'Easel (optional)'] : []
+          },
+          steps: [],
+          productLinks: []
+        }
+      };
+
+      setPaintingGuide(paintingGuideData);
+      setEstimatedTime(lesson.estimatedTime);
+      setArtworkTitle(null);
+
+      setTimeout(() => {
+        // Set first coaching message
+        setChatMessages([
+          { role: 'bot', message: lesson.firstMessage }
+        ]);
+        setIsAnalyzing(false);
+        setShowMaterialsOverview(true);
+        setProgress(0);
+        setArtworkStatus("in-progress");
+      }, 300);
+
+      console.log("✅ Reference image loaded successfully");
+    } catch (error) {
+      console.error("=== ERROR loading reference image ===", error);
       setError(`Error: ${error instanceof Error ? error.message : "Something went wrong"}`);
       setIsAnalyzing(false);
       clearInterval(progressInterval);
@@ -1295,88 +1440,46 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                     Not sure what to paint? Try one of these curated reference images to get started.
                   </p>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {/* Sample Reference 1 */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Sample Reference 1 - jenston.jpeg */}
                     <button
-                      onClick={() => {
-                        // TODO: Handle sample image selection
-                        console.log('Sample 1 clicked');
-                      }}
+                      onClick={() => handleReferenceImageClick('jenston.jpeg')}
                       className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">Sunset Landscape</span>
-                      </div>
+                      <Image
+                        src="/jenston.jpeg"
+                        alt="Portrait reference"
+                        fill
+                        className="object-cover"
+                      />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
                     </button>
 
-                    {/* Sample Reference 2 */}
+                    {/* Sample Reference 2 - study10-1.jpg */}
                     <button
-                      onClick={() => {
-                        // TODO: Handle sample image selection
-                        console.log('Sample 2 clicked');
-                      }}
+                      onClick={() => handleReferenceImageClick('study10-1.jpg')}
                       className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">Ocean Waves</span>
-                      </div>
+                      <Image
+                        src="/study10-1.jpg"
+                        alt="Still life reference"
+                        fill
+                        className="object-cover"
+                      />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
                     </button>
 
-                    {/* Sample Reference 3 */}
+                    {/* Sample Reference 3 - 3.jpg */}
                     <button
-                      onClick={() => {
-                        // TODO: Handle sample image selection
-                        console.log('Sample 3 clicked');
-                      }}
+                      onClick={() => handleReferenceImageClick('3.jpg')}
                       className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">Forest Path</span>
-                      </div>
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
-                    </button>
-
-                    {/* Sample Reference 4 */}
-                    <button
-                      onClick={() => {
-                        // TODO: Handle sample image selection
-                        console.log('Sample 4 clicked');
-                      }}
-                      className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">Sunflower Field</span>
-                      </div>
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
-                    </button>
-
-                    {/* Sample Reference 5 */}
-                    <button
-                      onClick={() => {
-                        // TODO: Handle sample image selection
-                        console.log('Sample 5 clicked');
-                      }}
-                      className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">Cherry Blossoms</span>
-                      </div>
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
-                    </button>
-
-                    {/* Sample Reference 6 */}
-                    <button
-                      onClick={() => {
-                        // TODO: Handle sample image selection
-                        console.log('Sample 6 clicked');
-                      }}
-                      className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-[#2563EB] transition-all shadow-sm hover:shadow-md"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-blue-600 flex items-center justify-center">
-                        <span className="text-white text-sm font-semibold">Mountain Vista</span>
-                      </div>
+                      <Image
+                        src="/3.jpg"
+                        alt="Landscape reference"
+                        fill
+                        className="object-cover"
+                      />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all" />
                     </button>
                   </div>
@@ -1821,20 +1924,44 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         {/* Guidance Content */}
                         <div className="relative flex-1 flex flex-col">
                           <div className="flex-1 flex flex-col h-full">
-                              {/* Phase Label with Voiceover Button */}
+                              {/* Phase Label with Feedback and Voiceover Buttons */}
                               <div className="mb-3 flex items-center justify-between">
                                 <span className="text-base font-bold text-[#1F2933]">
                                   {paintingGuide.coachPlan[currentTipPage].focus_area}
                                 </span>
-                                <button
-                                  onClick={() => isSpeaking ? stopSpeaking() : speakCurrentStep()}
-                                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                                    isSpeaking
-                                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                                  }`}
-                                  title={isSpeaking ? 'Stop voiceover' : 'Listen to step instructions'}
-                                >
+                                <div className="flex items-center gap-2">
+                                  {/* Feedback Buttons */}
+                                  <button
+                                    onClick={() => handleFeedback('thumbs-up')}
+                                    className="p-1.5 rounded-lg transition-all text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                    title="This lesson is helpful"
+                                    aria-label="Thumbs up"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904M14.25 9h2.25M5.904 18.75c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 01-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 10.203 4.167 9.75 5 9.75h1.053c.472 0 .745.556.5.96a8.958 8.958 0 00-1.302 4.665c0 1.194.232 2.333.654 3.375z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() => handleFeedback('thumbs-down')}
+                                    className="p-1.5 rounded-lg transition-all text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                    title="This lesson needs improvement"
+                                    aria-label="Thumbs down"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 15h2.25m8.024-9.75c.011.05.028.1.052.148.591 1.2.924 2.55.924 3.977a8.96 8.96 0 01-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398C20.613 14.547 19.833 15 19 15h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 00.303-.54m.023-8.25H16.48a4.5 4.5 0 01-1.423-.23l-3.114-1.04a4.5 4.5 0 00-1.423-.23H6.504c-.618 0-1.217.247-1.605.729A11.95 11.95 0 002.25 12c0 .434.023.863.068 1.285C2.427 14.306 3.346 15 4.372 15h3.126c.618 0 .991.724.725 1.282A7.471 7.471 0 007.5 19.5a2.25 2.25 0 002.25 2.25.75.75 0 00.75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 002.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384" />
+                                    </svg>
+                                  </button>
+
+                                  {/* Voiceover Button */}
+                                  <button
+                                    onClick={() => isSpeaking ? stopSpeaking() : speakCurrentStep()}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                                      isSpeaking
+                                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                    }`}
+                                    title={isSpeaking ? 'Stop voiceover' : 'Listen to step instructions'}
+                                  >
                                   {isSpeaking ? (
                                     <>
                                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -1852,6 +1979,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                     </>
                                   )}
                                 </button>
+                                </div>
                               </div>
 
                               {/* Coaching Point */}
@@ -2580,6 +2708,142 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         </div>
       )}
 
+      {/* Skills View */}
+      {activeView === "skills" && (
+        <div className="bg-white p-4 sm:p-6 md:p-8 rounded-lg sm:rounded-xl shadow-sm">
+          <div className="max-w-6xl mx-auto">
+            {/* Header */}
+            <div className="mb-8">
+              <h3 className="text-2xl sm:text-3xl font-bold text-[#1F2933] mb-2">Your Skills Progress</h3>
+              <p className="text-[#1F2933]/70">
+                Track your artistic development across key painting fundamentals
+              </p>
+            </div>
+
+            {/* Skills Grid */}
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              {/* Composition Skill */}
+              <div className="border-2 border-gray-200 rounded-xl p-6 hover:border-[#2563EB]/30 transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h4 className="text-xl font-bold text-[#1F2933] mb-1">Composition</h4>
+                    <p className="text-sm text-[#1F2933]/60">Arrangement & balance</p>
+                  </div>
+                  <div className="bg-gray-200 text-[#1F2933]/70 px-3 py-1 rounded-full text-sm font-semibold">
+                    Level 1 - Beginner
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <div className="flex justify-between text-sm text-[#1F2933]/70 mb-2">
+                    <span>Progress</span>
+                    <span>0%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-[#2563EB] h-2 rounded-full" style={{ width: '0%' }}></div>
+                  </div>
+                </div>
+                <p className="text-sm text-[#1F2933]/70">
+                  Complete coaching sessions to start tracking your composition skills
+                </p>
+              </div>
+
+              {/* Color Theory Skill */}
+              <div className="border-2 border-gray-200 rounded-xl p-6 hover:border-[#2563EB]/30 transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h4 className="text-xl font-bold text-[#1F2933] mb-1">Color Theory</h4>
+                    <p className="text-sm text-[#1F2933]/60">Mixing & harmony</p>
+                  </div>
+                  <div className="bg-gray-200 text-[#1F2933]/70 px-3 py-1 rounded-full text-sm font-semibold">
+                    Level 1 - Beginner
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <div className="flex justify-between text-sm text-[#1F2933]/70 mb-2">
+                    <span>Progress</span>
+                    <span>0%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-[#2563EB] h-2 rounded-full" style={{ width: '0%' }}></div>
+                  </div>
+                </div>
+                <p className="text-sm text-[#1F2933]/70">
+                  Complete coaching sessions to start tracking your color theory skills
+                </p>
+              </div>
+
+              {/* Value & Lighting Skill */}
+              <div className="border-2 border-gray-200 rounded-xl p-6 hover:border-[#2563EB]/30 transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h4 className="text-xl font-bold text-[#1F2933] mb-1">Value & Lighting</h4>
+                    <p className="text-sm text-[#1F2933]/60">Light, shadow & contrast</p>
+                  </div>
+                  <div className="bg-gray-200 text-[#1F2933]/70 px-3 py-1 rounded-full text-sm font-semibold">
+                    Level 1 - Beginner
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <div className="flex justify-between text-sm text-[#1F2933]/70 mb-2">
+                    <span>Progress</span>
+                    <span>0%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-[#2563EB] h-2 rounded-full" style={{ width: '0%' }}></div>
+                  </div>
+                </div>
+                <p className="text-sm text-[#1F2933]/70">
+                  Complete coaching sessions to start tracking your value & lighting skills
+                </p>
+              </div>
+
+              {/* Brushwork & Technique Skill */}
+              <div className="border-2 border-gray-200 rounded-xl p-6 hover:border-[#2563EB]/30 transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h4 className="text-xl font-bold text-[#1F2933] mb-1">Brushwork & Technique</h4>
+                    <p className="text-sm text-[#1F2933]/60">Application & edges</p>
+                  </div>
+                  <div className="bg-gray-200 text-[#1F2933]/70 px-3 py-1 rounded-full text-sm font-semibold">
+                    Level 1 - Beginner
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <div className="flex justify-between text-sm text-[#1F2933]/70 mb-2">
+                    <span>Progress</span>
+                    <span>0%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-[#2563EB] h-2 rounded-full" style={{ width: '0%' }}></div>
+                  </div>
+                </div>
+                <p className="text-sm text-[#1F2933]/70">
+                  Complete coaching sessions to start tracking your brushwork & technique skills
+                </p>
+              </div>
+            </div>
+
+            {/* Recent Assessments Section */}
+            <div className="border-t-2 border-gray-200 pt-8">
+              <h4 className="text-xl font-bold text-[#1F2933] mb-4">Recent Skill Assessments</h4>
+              <div className="bg-[#FBF7F2] rounded-xl p-6 text-center">
+                <div className="text-5xl mb-3">📊</div>
+                <p className="text-[#1F2933]/70 mb-2">No assessments yet</p>
+                <p className="text-sm text-[#1F2933]/50 mb-4">
+                  Complete more coaching sessions to track your skills progress over time
+                </p>
+                <button
+                  onClick={() => onViewChange("new-artwork")}
+                  className="px-6 py-2.5 bg-[#2563EB] text-white rounded-lg font-semibold hover:bg-[#1D4ED8] transition-all shadow-sm"
+                >
+                  Start a Coaching Session
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteConfirmModal && (
         <div
@@ -2829,6 +3093,88 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
             </div>
           </form>
         </div>
+      )}
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            onClick={() => setShowFeedbackModal(false)}
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  {feedbackType === 'thumbs-up' ? (
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-green-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904M14.25 9h2.25M5.904 18.75c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 01-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 10.203 4.167 9.75 5 9.75h1.053c.472 0 .745.556.5.96a8.958 8.958 0 00-1.302 4.665c0 1.194.232 2.333.654 3.375z" />
+                      </svg>
+                    </div>
+                  ) : (
+                    <div className="p-2 bg-red-100 rounded-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-red-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 15h2.25m8.024-9.75c.011.05.028.1.052.148.591 1.2.924 2.55.924 3.977a8.96 8.96 0 01-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398C20.613 14.547 19.833 15 19 15h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 00.303-.54m.023-8.25H16.48a4.5 4.5 0 01-1.423-.23l-3.114-1.04a4.5 4.5 0 00-1.423-.23H6.504c-.618 0-1.217.247-1.605.729A11.95 11.95 0 002.25 12c0 .434.023.863.068 1.285C2.427 14.306 3.346 15 4.372 15h3.126c.618 0 .991.724.725 1.282A7.471 7.471 0 007.5 19.5a2.25 2.25 0 002.25 2.25.75.75 0 00.75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 002.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384" />
+                      </svg>
+                    </div>
+                  )}
+                  <h3 className="text-lg font-bold text-[#1F2933]">
+                    {feedbackType === 'thumbs-up' ? 'Glad you like it!' : 'Help us improve'}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowFeedbackModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Body */}
+              <p className="text-sm text-[#1F2933]/70 mb-4">
+                {feedbackType === 'thumbs-up'
+                  ? 'Tell us what\'s working well for you (optional):'
+                  : 'Tell us what could be improved (optional):'}
+              </p>
+
+              <textarea
+                value={feedbackComment}
+                onChange={(e) => setFeedbackComment(e.target.value)}
+                placeholder={feedbackType === 'thumbs-up'
+                  ? 'E.g., "The color mixing guide is really helpful..."'
+                  : 'E.g., "I would like more examples of..."'}
+                rows={4}
+                className="w-full p-3 text-sm text-[#1F2933] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-transparent resize-none"
+              />
+
+              {/* Footer */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowFeedbackModal(false);
+                    setFeedbackComment("");
+                  }}
+                  className="flex-1 px-4 py-2 text-sm font-semibold text-[#1F2933] bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={submitFeedback}
+                  className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-lg transition-colors"
+                >
+                  Submit Feedback
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

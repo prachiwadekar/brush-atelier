@@ -17,7 +17,7 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ userWithProfile }: DashboardClientProps) {
-  const [activeView, setActiveView] = useState<"portfolio" | "new-artwork" | "critique">("portfolio");
+  const [activeView, setActiveView] = useState<"portfolio" | "new-artwork" | "critique" | "skills">("portfolio");
   const startNewSessionRef = useRef<any>(null);
 
   return (

@@ -14,7 +14,6 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ userName, activeView, onViewChange, onStartNewSession, children }: DashboardLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   return (
@@ -22,45 +21,33 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
       {/* Top Navigation Bar */}
       <nav className="bg-white/95 backdrop-blur-md shadow-sm border-b border-[#1F2933]/10 fixed top-0 left-0 right-0 z-30">
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14">
-            <div className="flex items-center gap-3">
-              {/* Burger Menu Button */}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="text-[#1F2933] hover:text-[#2563EB] transition-colors p-2"
-                aria-label="Toggle menu"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
-              </button>
-
-              {/* Logo */}
-              <Link href="/" className="flex items-center gap-2 sm:gap-3">
-                <Image
-                  src="/logo.png"
-                  alt="Brush Atelier Logo"
-                  width={48}
-                  height={48}
-                  className="w-8 h-8 sm:w-12 sm:h-12"
-                  key="logo-v3"
-                  unoptimized
-                />
-                <h1 className="text-lg sm:text-2xl font-bold hidden sm:block relative">
-                  <span className="text-[#C2410C]">Brush</span>{" "}
-                  <span className="text-[#1F2933]">Atelier</span>
-                  <span className="absolute -top-1 sm:-top-2 -right-10 sm:-right-12 bg-[#2563EB] text-white text-[0.4rem] sm:text-[0.5rem] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 sm:py-1 rounded shadow-sm">
-                    BETA
-                  </span>
-                </h1>
-              </Link>
-            </div>
+          {/* Top Row: Logo, Feedback Banner, User Menu */}
+          <div className="flex justify-between items-center h-14 border-b border-[#1F2933]/10">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 sm:gap-3">
+              <Image
+                src="/logo.png"
+                alt="Brush Atelier Logo"
+                width={48}
+                height={48}
+                className="w-8 h-8 sm:w-12 sm:h-12"
+                key="logo-v3"
+                unoptimized
+              />
+              <h1 className="text-lg sm:text-2xl font-bold relative">
+                <span className="text-[#C2410C]">Brush</span>{" "}
+                <span className="text-[#1F2933]">Atelier</span>
+                <span className="absolute -top-1 sm:-top-2 -right-10 sm:-right-12 bg-[#2563EB] text-white text-[0.4rem] sm:text-[0.5rem] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 sm:py-1 rounded shadow-sm">
+                  BETA
+                </span>
+              </h1>
+            </Link>
 
             {/* Feedback Banner - Center */}
             <div className="hidden lg:flex flex-1 justify-center">
               <div className="bg-red-500/80 px-3 py-1.5 rounded-lg shadow-sm">
                 <p className="text-xs text-white font-bold text-center">
-                  Inviting your feedback at{' '}
+                  Your feedback means a lot—write to us at{' '}
                   <a href="mailto:team.brushatelier@gmail.com" className="underline hover:text-white/90 transition-colors">
                     team.brushatelier@gmail.com
                   </a>
@@ -68,39 +55,8 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
               </div>
             </div>
 
-            {/* User Info */}
+            {/* Right Side: User Menu */}
             <div className="flex items-center gap-1 sm:gap-2">
-              {/* My Portfolio Button - Show on new-artwork page */}
-              {activeView === "new-artwork" && (
-                <button
-                  onClick={() => {
-                    if (onViewChange) {
-                      onViewChange("portfolio");
-                    }
-                  }}
-                  className="bg-white hover:bg-gray-50 text-[#2563EB] border-2 border-[#2563EB] px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-sm hover:shadow-md"
-                  aria-label="View Portfolio"
-                >
-                  <span className="hidden sm:inline">My Portfolio</span>
-                  <span className="sm:hidden">Portfolio</span>
-                </button>
-              )}
-
-              {/* Create + Button - Show on new-artwork, portfolio, and skills pages */}
-              {(activeView === "new-artwork" || activeView === "portfolio" || activeView === "skills") && (
-                <button
-                  onClick={() => {
-                    if (onStartNewSession) {
-                      onStartNewSession();
-                    }
-                  }}
-                  className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-sm hover:shadow-md"
-                  aria-label="Create New Art Session"
-                >
-                  Create +
-                </button>
-              )}
-
               {/* User Menu Dropdown */}
               <div className="relative">
                 <button
@@ -143,49 +99,20 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
               </div>
             </div>
           </div>
-        </div>
-      </nav>
 
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-[#1F2933]/60 backdrop-blur-sm z-40 transition-opacity"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-64 sm:w-72 bg-white/95 backdrop-blur-md border-r border-[#1F2933]/10 z-40 transform transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="p-4 sm:p-6">
-          {/* Welcome Section */}
-          <div className="mb-6 sm:mb-8">
-            <h2 className="text-lg sm:text-xl font-bold text-[#1F2933] mb-1">
-              Welcome back, {userName}!
-            </h2>
-            <p className="text-[#1F2933]/60 text-xs sm:text-sm">
-              Where Good Artists become Great
-            </p>
-          </div>
-
-          {/* Navigation Items */}
-          <nav className="space-y-1.5 sm:space-y-2">
+          {/* Second Row: Horizontal Navigation Tabs */}
+          <div className="flex items-center justify-end gap-1 py-2 overflow-x-auto">
+            {/* Create New Tab */}
             <button
               onClick={() => {
-                // First trigger the clear/new session if callback exists
                 if (onStartNewSession) {
                   onStartNewSession();
                 }
-                // Then navigate to new-artwork view
                 onViewChange("new-artwork");
-                setSidebarOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                 activeView === "new-artwork"
-                  ? "bg-[#2563EB] text-white font-semibold"
+                  ? "bg-[#2563EB] text-white shadow-md"
                   : "text-[#1F2933]/70 hover:bg-[#2563EB]/10 hover:text-[#2563EB]"
               }`}
             >
@@ -195,14 +122,27 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
               <span>Create New</span>
             </button>
 
+            {/* Critiques Tab */}
             <button
-              onClick={() => {
-                onViewChange("portfolio");
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              onClick={() => onViewChange("critique")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
+                activeView === "critique"
+                  ? "bg-[#2563EB] text-white shadow-md"
+                  : "text-[#1F2933]/70 hover:bg-[#2563EB]/10 hover:text-[#2563EB]"
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>Critiques</span>
+            </button>
+
+            {/* My Portfolio Tab */}
+            <button
+              onClick={() => onViewChange("portfolio")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                 activeView === "portfolio"
-                  ? "bg-[#2563EB] text-white font-semibold"
+                  ? "bg-[#2563EB] text-white shadow-md"
                   : "text-[#1F2933]/70 hover:bg-[#2563EB]/10 hover:text-[#2563EB]"
               }`}
             >
@@ -212,14 +152,12 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
               <span>My Portfolio</span>
             </button>
 
+            {/* Skills Tab */}
             <button
-              onClick={() => {
-                onViewChange("skills");
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              onClick={() => onViewChange("skills")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all ${
                 activeView === "skills"
-                  ? "bg-[#2563EB] text-white font-semibold"
+                  ? "bg-[#2563EB] text-white shadow-md"
                   : "text-[#1F2933]/70 hover:bg-[#2563EB]/10 hover:text-[#2563EB]"
               }`}
             >
@@ -228,12 +166,12 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
               </svg>
               <span>Skills</span>
             </button>
-          </nav>
+          </div>
         </div>
-      </aside>
+      </nav>
 
-      {/* Main Content */}
-      <main className="pt-14 transition-all duration-300">
+      {/* Main Content - Adjusted for taller header */}
+      <main className="pt-[7.5rem] transition-all duration-300">
         <div className="px-4 sm:px-6 lg:px-8 py-6 max-w-[1920px] mx-auto w-full">
           {children}
         </div>

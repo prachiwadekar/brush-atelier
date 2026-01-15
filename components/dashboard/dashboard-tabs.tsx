@@ -214,6 +214,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const [selectedCritiqueCard, setSelectedCritiqueCard] = useState<string | null>(null);
   const [showTryThisNext, setShowTryThisNext] = useState(false);
   const [isLoadingCritique, setIsLoadingCritique] = useState(false);
+  const [critiqueAnalyzing, setCritiqueAnalyzing] = useState(false);
   const [showReferenceSection, setShowReferenceSection] = useState(false);
   const [showUploadedImage, setShowUploadedImage] = useState(true);
   const [showImageZoom, setShowImageZoom] = useState(false);
@@ -2427,7 +2428,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
       {activeView === "critique" && (
         <div className="bg-white p-4 sm:p-6 md:p-8 rounded-lg sm:rounded-xl shadow-sm">
           {!critiquePreview ? (
-            /* Upload Screen */
+            /* Initial Upload Screen - No images uploaded yet */
             <div className="max-w-2xl mx-auto">
               <div className="text-center mb-8">
                 <h3 className="text-3xl font-bold text-[#1F2933] mb-3">Instant AI Critique</h3>
@@ -2464,90 +2465,151 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                   Upload Your Artwork
                 </button>
                 <p className="mt-4 text-sm text-[#1F2933]/60">
-                  PNG, JPG up to 10MB
+                  PNG, JPG up to 10MB (Required)
                 </p>
               </div>
 
-              {/* Optional Reference Image Upload - Collapsible */}
+              {/* Optional Reference Image Upload */}
               <div className="mt-8">
-                <button
-                  onClick={() => setShowReferenceSection(!showReferenceSection)}
-                  className="w-full flex items-center justify-center gap-2 text-[#1F2933]/70 hover:text-[#2563EB] transition-colors py-2"
-                >
-                  <span className="text-sm font-medium">
-                    {showReferenceSection ? "Hide" : "Add"} Reference Image (Optional)
-                  </span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                    className={`w-4 h-4 transition-transform ${showReferenceSection ? "rotate-180" : ""}`}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
+                <h4 className="text-base font-semibold text-[#1F2933] mb-4 text-center">
+                  Reference Image (Optional)
+                </h4>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-gray-400 transition-colors bg-gray-50/30">
+                  <input
+                    ref={critiqueReferenceInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setCritiqueReferenceImage(file);
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setCritiqueReferencePreview(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  {!critiqueReferencePreview ? (
+                    <>
+                      <p className="text-sm text-[#1F2933]/70 mb-4">
+                        Upload a reference image you're trying to replicate
+                      </p>
+                      <button
+                        onClick={() => critiqueReferenceInputRef.current?.click()}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#1F2933] border-2 border-gray-300 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-all"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                        </svg>
+                        Upload Reference Image
+                      </button>
+                    </>
+                  ) : (
+                    <div className="relative inline-block">
+                      <img src={critiqueReferencePreview} alt="Reference" className="max-h-40 rounded-lg shadow-sm" />
+                      <button
+                        onClick={() => {
+                          setCritiqueReferenceImage(null);
+                          setCritiqueReferencePreview(null);
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                        aria-label="Remove reference image"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                  <p className="mt-3 text-xs text-[#1F2933]/50">
+                    This helps the AI compare your work to what you're studying
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : critiquePreview && !critiqueFeedback && !critiqueAnalyzing ? (
+            /* Preview Screen - Images uploaded, ready to submit */
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <h3 className="text-3xl font-bold text-[#1F2933] mb-3">Review Your Uploads</h3>
+                <p className="text-lg text-[#1F2933]/70">
+                  Ready to get your critique?
+                </p>
+              </div>
 
-                {showReferenceSection && (
-                  <div className="mt-4 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-gray-400 transition-colors bg-gray-50/30">
-                    <input
-                      ref={critiqueReferenceInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setCritiqueReferenceImage(file);
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setCritiqueReferencePreview(reader.result as string);
-                          };
-                          reader.readAsDataURL(file);
-                        }
+              <div className={`grid ${critiqueReferencePreview ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-8 mb-8`}>
+                {/* User's Artwork */}
+                <div>
+                  <h4 className="text-lg font-semibold text-[#1F2933] mb-3">Your Artwork</h4>
+                  <div className="relative">
+                    <img src={critiquePreview} alt="Your artwork" className="w-full rounded-lg shadow-md" />
+                    <button
+                      onClick={() => {
+                        setCritiquePreview(null);
+                        setCritiqueImage(null);
                       }}
-                      className="hidden"
-                    />
-                    {!critiqueReferencePreview ? (
-                      <>
-                        <p className="text-sm text-[#1F2933]/70 mb-4">
-                          Upload a reference image you're trying to replicate
-                        </p>
-                        <button
-                          onClick={() => critiqueReferenceInputRef.current?.click()}
-                          className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#1F2933] border-2 border-gray-300 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition-all"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                          </svg>
-                          Upload Reference Image
-                        </button>
-                      </>
-                    ) : (
-                      <div className="relative inline-block">
-                        <img src={critiqueReferencePreview} alt="Reference" className="max-h-40 rounded-lg shadow-sm" />
-                        <button
-                          onClick={() => {
-                            setCritiqueReferenceImage(null);
-                            setCritiqueReferencePreview(null);
-                          }}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                          aria-label="Remove reference image"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-                    <p className="mt-3 text-xs text-[#1F2933]/50">
-                      This helps the AI compare your work to what you're studying
-                    </p>
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
+                      aria-label="Remove artwork"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Reference Image (if uploaded) */}
+                {critiqueReferencePreview && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-[#1F2933] mb-3">Reference Image</h4>
+                    <div className="relative">
+                      <img src={critiqueReferencePreview} alt="Reference" className="w-full rounded-lg shadow-md" />
+                      <button
+                        onClick={() => {
+                          setCritiqueReferenceImage(null);
+                          setCritiqueReferencePreview(null);
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
+                        aria-label="Remove reference image"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => {
+                    setCritiquePreview(null);
+                    setCritiqueImage(null);
+                    setCritiqueReferenceImage(null);
+                    setCritiqueReferencePreview(null);
+                  }}
+                  className="px-6 py-3 bg-white text-[#1F2933] border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all"
+                >
+                  Start Over
+                </button>
+                <button
+                  onClick={async () => {
+                    setCritiqueAnalyzing(true);
+                    // TODO: Call API to get critique
+                    // For now, this will trigger the analyzing state
+                  }}
+                  className="px-8 py-3 bg-[#2563EB] text-white rounded-lg font-semibold hover:bg-[#1D4ED8] transition-all shadow-md hover:shadow-lg"
+                >
+                  Get Critique
+                </button>
+              </div>
             </div>
-          ) : !critiqueFeedback ? (
+          ) : critiqueAnalyzing && !critiqueFeedback ? (
             /* Loading/Analyzing Screen */
             <div className="max-w-4xl mx-auto">
               <div className="grid grid-cols-2 gap-8">
@@ -2820,24 +2882,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                 <p className="text-sm text-[#1F2933]/70">
                   Complete coaching sessions to start tracking your brushwork & technique skills
                 </p>
-              </div>
-            </div>
-
-            {/* Recent Assessments Section */}
-            <div className="border-t-2 border-gray-200 pt-8">
-              <h4 className="text-xl font-bold text-[#1F2933] mb-4">Recent Skill Assessments</h4>
-              <div className="bg-[#FBF7F2] rounded-xl p-6 text-center">
-                <div className="text-5xl mb-3">📊</div>
-                <p className="text-[#1F2933]/70 mb-2">No assessments yet</p>
-                <p className="text-sm text-[#1F2933]/50 mb-4">
-                  Complete more coaching sessions to track your skills progress over time
-                </p>
-                <button
-                  onClick={() => onViewChange("new-artwork")}
-                  className="px-6 py-2.5 bg-[#2563EB] text-white rounded-lg font-semibold hover:bg-[#1D4ED8] transition-all shadow-sm"
-                >
-                  Start a Coaching Session
-                </button>
               </div>
             </div>
           </div>

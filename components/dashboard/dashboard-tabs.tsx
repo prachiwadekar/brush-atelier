@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Hand } from "lucide-react";
 import { REFERENCE_LESSONS } from "@/lib/reference-lessons";
 
 // Image compression utility
@@ -1536,21 +1537,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                             </div>
                           )}
 
-                          {/* Ask AI Coach Button - Only show after analysis is complete */}
-                          {paintingGuide && (
-                            <button
-                              onClick={() => {
-                                console.log('Ask AI Coach button clicked');
-                                setShowFloatingChat(!showFloatingChat);
-                              }}
-                              className="w-full flex items-center justify-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-4 py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg font-semibold text-sm"
-                              title="Ask AI Coach"
-                              aria-label="Open chat with AI coach"
-                            >
-                              <span className="text-lg">✋</span>
-                              Coach, can you help?
-                            </button>
-                          )}
                         </div>
                       )}
 
@@ -1605,31 +1591,31 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         onClick={() => setShowColorMixModal(false)}
                       >
                         <div
-                          className="bg-white rounded-xl shadow-2xl max-w-lg w-full"
+                          className="bg-white rounded-xl shadow-2xl max-w-2xl w-full"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {/* Modal Header */}
-                          <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4 rounded-t-xl">
+                          <div className="px-8 py-5 rounded-t-xl border-b border-gray-200">
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-4">
                                 <div
-                                  className="w-10 h-10 rounded-full border-3 border-white shadow-lg"
+                                  className="w-16 h-16 rounded-lg border-2 border-gray-300 shadow-md"
                                   style={{ backgroundColor: getColorHex(selectedColorForMixing) }}
                                 />
                                 <div>
-                                  <h3 className="text-lg font-bold text-white">
+                                  <h3 className="text-2xl font-bold text-gray-900">
                                     {selectedColorForMixing}
                                   </h3>
                                   {isStandardColor(selectedColorForMixing) ? (
-                                    <p className="text-xs text-white/90">Essential Color</p>
+                                    <p className="text-sm text-gray-600">Essential Color</p>
                                   ) : (
-                                    <p className="text-xs text-white/90">Mixing Guide</p>
+                                    <p className="text-sm text-gray-600">Mixing Guide</p>
                                   )}
                                 </div>
                               </div>
                               <button
                                 onClick={() => setShowColorMixModal(false)}
-                                className="text-white hover:text-white/80 transition-colors text-2xl leading-none"
+                                className="text-gray-400 hover:text-gray-600 transition-colors text-3xl leading-none"
                               >
                                 ×
                               </button>
@@ -1637,15 +1623,15 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                           </div>
 
                           {/* Modal Content */}
-                          <div className="p-6">
+                          <div className="p-8">
                             {isStandardColor(selectedColorForMixing) ? (
-                              <div className="space-y-4">
-                                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                                  <div className="flex items-start gap-3">
-                                    <span className="text-2xl">🎨</span>
+                              <div className="space-y-5">
+                                <div className="bg-blue-50 border-l-4 border-blue-400 p-5 rounded-r-lg">
+                                  <div className="flex items-start gap-4">
+                                    <span className="text-3xl">🎨</span>
                                     <div>
-                                      <h4 className="font-bold text-blue-900 mb-1">Essential Color</h4>
-                                      <p className="text-sm text-blue-800 leading-relaxed">
+                                      <h4 className="font-bold text-gray-900 mb-2 text-lg">Essential Color</h4>
+                                      <p className="text-base text-gray-700 leading-relaxed">
                                         This is a basic, essential color that you should have in your paint kit.
                                         We recommend purchasing {selectedColorForMixing} from an art supply store as it's
                                         a foundational color used in most paintings.
@@ -1653,8 +1639,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                     </div>
                                   </div>
                                 </div>
-                                <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
-                                  <p className="text-xs text-amber-800">
+                                <div className="bg-amber-50 border border-amber-200 p-5 rounded-lg">
+                                  <p className="text-sm text-gray-700">
                                     <strong>Pro Tip:</strong> Titanium White is the most used color in painting.
                                     Invest in a larger tube of high-quality Titanium White along with the primary colors
                                     (Cadmium Red, Cadmium Yellow, Ultramarine Blue) and Ivory Black.
@@ -1662,35 +1648,35 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 </div>
                               </div>
                             ) : (
-                              <div className="space-y-4">
-                                <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg">
-                                  <div className="flex items-start gap-3">
-                                    <span className="text-2xl">🎨</span>
+                              <div className="space-y-5">
+                                <div className="bg-gray-50 border-l-4 border-gray-400 p-5 rounded-r-lg">
+                                  <div className="flex items-start gap-4">
+                                    <span className="text-3xl">🎨</span>
                                     <div>
-                                      <h4 className="font-bold text-purple-900 mb-2">How to Mix This Color</h4>
-                                      <p className="text-sm text-purple-800 leading-relaxed font-medium">
+                                      <h4 className="font-bold text-gray-900 mb-3 text-lg">How to Mix This Color</h4>
+                                      <p className="text-base text-gray-700 leading-relaxed font-medium">
                                         {getMixingRecipe(selectedColorForMixing).recipe}
                                       </p>
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <p className="text-sm text-gray-700 leading-relaxed">
+                                <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
+                                  <p className="text-base text-gray-700 leading-relaxed">
                                     {getMixingRecipe(selectedColorForMixing).description}
                                   </p>
                                 </div>
 
-                                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                                  <p className="text-xs text-green-800">
+                                <div className="bg-green-50 border border-green-200 p-5 rounded-lg">
+                                  <p className="text-sm text-gray-700">
                                     <strong>Mixing Tip:</strong> Start with small amounts and gradually add colors.
                                     It's easier to darken a color than to lighten it. Always mix more than you think
                                     you'll need - it's hard to recreate the exact same shade later!
                                   </p>
                                 </div>
 
-                                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                                  <p className="text-xs text-blue-800">
+                                <div className="bg-blue-50 border border-blue-200 p-5 rounded-lg">
+                                  <p className="text-sm text-gray-700">
                                     <strong>Prefer not to mix?</strong> You can also purchase {selectedColorForMixing} directly
                                     from an art supply store if you'd rather have it ready-made. Many artists keep both
                                     mixed and pre-made colors in their palette!
@@ -1698,13 +1684,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 </div>
                               </div>
                             )}
-
-                            <button
-                              onClick={() => setShowColorMixModal(false)}
-                              className="mt-6 w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
-                            >
-                              Got It!
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -1832,7 +1811,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                           {/* Materials Grid */}
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             {/* Paint Colors */}
-                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="p-4 rounded-lg border border-gray-200">
                               <div className="flex items-center gap-2 mb-3">
                                 <span className="text-xl">🎨</span>
                                 <h5 className="font-bold text-[#1F2933]">Paint Colors</h5>
@@ -1861,7 +1840,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                             </div>
 
                             {/* Brushes */}
-                            <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                            <div className="p-4 rounded-lg border border-gray-200">
                               <div className="flex items-center gap-2 mb-3">
                                 <span className="text-xl">🖌️</span>
                                 <h5 className="font-bold text-[#1F2933]">Brushes</h5>
@@ -1869,7 +1848,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                               <ul className="space-y-1">
                                 {getSupplies()!.brushes.map((brush: string, index: number) => (
                                   <li key={index} className="flex items-start gap-2 text-xs text-[#1F2933]">
-                                    <span className="text-orange-600 mt-0.5">•</span>
+                                    <span className="text-gray-400 mt-0.5">•</span>
                                     <span>{brush}</span>
                                   </li>
                                 ))}
@@ -1877,7 +1856,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                             </div>
 
                             {/* Other Materials */}
-                            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                            <div className="p-4 rounded-lg border border-gray-200">
                               <div className="flex items-center gap-2 mb-3">
                                 <span className="text-xl">✨</span>
                                 <h5 className="font-bold text-[#1F2933]">Other Materials</h5>
@@ -1885,7 +1864,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                               <ul className="space-y-1">
                                 {getSupplies()!.otherMaterials.map((material: string, index: number) => (
                                   <li key={index} className="flex items-start gap-2 text-xs text-[#1F2933]">
-                                    <span className="text-emerald-600 mt-0.5">•</span>
+                                    <span className="text-gray-400 mt-0.5">•</span>
                                     <span>{material}</span>
                                   </li>
                                 ))}
@@ -1931,6 +1910,19 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                   {paintingGuide.coachPlan[currentTipPage].focus_area}
                                 </span>
                                 <div className="flex items-center gap-2">
+                                  {/* Ask AI Coach Button */}
+                                  <button
+                                    onClick={() => {
+                                      console.log('Ask AI Coach button clicked');
+                                      setShowFloatingChat(!showFloatingChat);
+                                    }}
+                                    className="p-1.5 rounded-lg transition-all text-[#2563EB] hover:text-[#1D4ED8] hover:bg-blue-50"
+                                    title="Ask AI Coach"
+                                    aria-label="Open chat with AI coach"
+                                  >
+                                    <Hand className="w-4 h-4" />
+                                  </button>
+
                                   {/* Feedback Buttons */}
                                   <button
                                     onClick={() => handleFeedback('thumbs-up')}
@@ -1983,62 +1975,47 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 </div>
                               </div>
 
-                              {/* Coaching Point */}
-                              <div className="mb-4">
-                                <p className="text-base text-[#1F2933] leading-relaxed">
-                                  {paintingGuide.coachPlan[currentTipPage].coaching_point}
-                                </p>
+                              {/* Coaching Point with Image Placeholder */}
+                              <div className="mb-4 flex gap-4">
+                                {/* Image Placeholder */}
+                                <div className="flex-shrink-0 w-48 h-48 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 text-gray-400">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                  </svg>
+                                </div>
+
+                                {/* Coaching Text */}
+                                <div className="flex-1">
+                                  <p className="text-base text-[#1F2933] leading-relaxed">
+                                    {paintingGuide.coachPlan[currentTipPage].coaching_point}
+                                  </p>
+
+                                  {/* Recommended Brush - Inline */}
+                                  {paintingGuide.coachPlan[currentTipPage].recommended_brush && (
+                                    <p className="text-base text-[#1F2933] leading-relaxed mt-3">
+                                      <span className="font-semibold text-green-800">Recommended brush: </span>
+                                      {paintingGuide.coachPlan[currentTipPage].recommended_brush}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
 
                               {/* Full Width Sections Below */}
                               <div>
-                            {/* Recommended Brush & Color Mixing - Side by Side */}
-                            {(paintingGuide.coachPlan[currentTipPage].recommended_brush || paintingGuide.coachPlan[currentTipPage].color_mixing) && (
-                              <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {/* Recommended Brush */}
-                                {paintingGuide.coachPlan[currentTipPage].recommended_brush && (
-                                  <div className="p-3 bg-green-50 border-l-4 border-green-400 rounded-r-lg">
-                                    <h4 className="text-sm font-bold text-green-900 mb-2 flex items-center gap-2">
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
-                                      </svg>
-                                      Recommended Brush
-                                    </h4>
-                                    <p className="text-sm text-green-800 leading-relaxed">
-                                      {paintingGuide.coachPlan[currentTipPage].recommended_brush}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Color Mixing Guide */}
-                                {paintingGuide.coachPlan[currentTipPage].color_mixing && (
-                                  <div className="p-3 bg-purple-50 border-l-4 border-purple-400 rounded-r-lg">
-                                    <h4 className="text-sm font-bold text-purple-900 mb-2 flex items-center gap-2">
-                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
-                                      </svg>
-                                      Color Mixing Guide
-                                    </h4>
-                                    <p className="text-sm text-purple-800 leading-relaxed">
-                                      {paintingGuide.coachPlan[currentTipPage].color_mixing}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
                             {/* Caution */}
                             {paintingGuide.coachPlan[currentTipPage].common_mistakes && (
-                              <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
-                                <h4 className="text-sm font-bold text-red-900 mb-2 flex items-center gap-2">
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                                  </svg>
-                                  Caution
-                                </h4>
-                                <p className="text-sm text-red-800 leading-relaxed">
-                                  {paintingGuide.coachPlan[currentTipPage].common_mistakes}
-                                </p>
+                              <div className="mb-4">
+                                <div className="p-3 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
+                                  <h4 className="text-sm font-bold text-red-900 mb-2 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                    </svg>
+                                    Caution
+                                  </h4>
+                                  <p className="text-sm text-red-800 leading-relaxed">
+                                    {paintingGuide.coachPlan[currentTipPage].common_mistakes}
+                                  </p>
+                                </div>
                               </div>
                             )}
 
@@ -2122,7 +2099,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 {showSuppliesSection && (
                                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                                     {/* Paint Colors */}
-                                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                    <div className="p-3 rounded-lg border border-gray-200">
                                       <div className="flex items-center gap-2 mb-2">
                                         <span className="text-base">🎨</span>
                                         <h5 className="font-bold text-[#1F2933]">Paint Colors</h5>
@@ -2151,7 +2128,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                     </div>
 
                                     {/* Brushes */}
-                                    <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                                    <div className="p-3 rounded-lg border border-gray-200">
                                       <div className="flex items-center gap-2 mb-2">
                                         <span className="text-base">🖌️</span>
                                         <h5 className="font-bold text-[#1F2933]">Brushes</h5>
@@ -2159,7 +2136,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                       <ul className="space-y-1">
                                         {getSupplies()!.brushes.map((brush: string, index: number) => (
                                           <li key={index} className="flex items-start gap-2 text-xs text-[#1F2933]">
-                                            <span className="text-orange-600 mt-0.5">•</span>
+                                            <span className="text-gray-400 mt-0.5">•</span>
                                             <span>{brush}</span>
                                           </li>
                                         ))}
@@ -2167,7 +2144,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                     </div>
 
                                     {/* Other Materials */}
-                                    <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                                    <div className="p-3 rounded-lg border border-gray-200">
                                       <div className="flex items-center gap-2 mb-2">
                                         <span className="text-base">✨</span>
                                         <h5 className="font-bold text-[#1F2933]">Other Materials</h5>
@@ -2175,7 +2152,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                       <ul className="space-y-1">
                                         {getSupplies()!.otherMaterials.map((material: string, index: number) => (
                                           <li key={index} className="flex items-start gap-2 text-xs text-[#1F2933]">
-                                            <span className="text-emerald-600 mt-0.5">•</span>
+                                            <span className="text-gray-400 mt-0.5">•</span>
                                             <span>{material}</span>
                                           </li>
                                         ))}

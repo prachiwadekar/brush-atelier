@@ -33,7 +33,7 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
           <div className="hidden md:flex flex-1 justify-center">
             <div className="bg-red-500/80 px-4 py-2 rounded-lg shadow-sm">
               <p className="text-sm lg:text-base text-white font-bold text-center">
-                Inviting your feedback at{' '}
+                Your feedback means a lot—write to us at{' '}
                 <a href="mailto:team.brushatelier@gmail.com" className="underline hover:text-white/90 transition-colors">
                   team.brushatelier@gmail.com
                 </a>

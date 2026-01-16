@@ -43,20 +43,25 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
               </h1>
             </Link>
 
-            {/* Feedback Banner - Center */}
-            <div className="hidden lg:flex flex-1 justify-center">
-              <div className="bg-red-500/80 px-3 py-1.5 rounded-lg shadow-sm">
-                <p className="text-xs text-white font-bold text-center">
-                  Your feedback means a lot—write to us at{' '}
-                  <a href="mailto:team.brushatelier@gmail.com" className="underline hover:text-white/90 transition-colors">
-                    team.brushatelier@gmail.com
-                  </a>
-                </p>
-              </div>
-            </div>
+            {/* Spacer */}
+            <div className="flex-1"></div>
 
-            {/* Right Side: User Menu */}
-            <div className="flex items-center gap-1 sm:gap-2">
+            {/* Right Side: Feedback Banner + User Menu */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Feedback Banner */}
+              <div className="hidden lg:block">
+                <div className="px-4 py-2 border border-[#C2410C]/40 rounded-lg bg-[#C2410C]/5">
+                  <p className="text-sm text-[#C2410C] font-medium">
+                    Your feedback means a lot—write to us at{' '}
+                    <a href="mailto:team.brushatelier@gmail.com" className="text-[#C2410C] hover:text-[#2563EB] transition-colors underline font-semibold">
+                      team.brushatelier@gmail.com
+                    </a>
+                  </p>
+                </div>
+              </div>
+
+              {/* User Menu */}
+              <div className="flex items-center gap-1 sm:gap-2">
               {/* User Menu Dropdown */}
               <div className="relative">
                 <button
@@ -96,6 +101,7 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
                     </div>
                   </>
                 )}
+              </div>
               </div>
             </div>
           </div>

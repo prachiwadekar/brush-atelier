@@ -104,7 +104,7 @@ export default function ArtistJoinPage() {
               <div className="hidden md:block">
                 <div className="bg-red-500/80 px-4 py-2 rounded-lg shadow-sm">
                   <p className="text-xs lg:text-sm text-white font-bold text-center">
-                    Inviting your feedback at{' '}
+                    Your feedback means a lot—write to us at{' '}
                     <a href="mailto:team.brushatelier@gmail.com" className="underline hover:text-white/90 transition-colors">
                       team.brushatelier@gmail.com
                     </a>

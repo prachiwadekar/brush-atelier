@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import Groq from "groq-sdk";
 import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
 import { randomBytes } from "crypto";
 
-// Increase body size limit for image uploads
-export const maxDuration = 60; // 60 seconds max execution time
+// Increase body size limit for image uploads and allow time for image generation
+export const maxDuration = 300; // 5 minutes max execution time (needed for generating 10-12 step images)
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -15,6 +16,8 @@ const groq = new Groq({
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || "");
 
 interface CoachStep {
   step_number: number;
@@ -25,6 +28,146 @@ interface CoachStep {
   recommended_brush?: string;
   canvas_state?: string;
   visual_description?: string;
+  step_image_url?: string;
+}
+
+// Generate 3 milestone images showing painting progression using Google's Gemini image generation
+async function generate3MilestoneImages(
+  sessionId: string,
+  referenceImageBase64: string,
+  referenceImageMimeType: string,
+  medium: string
+): Promise<void> {
+  console.log(`📸 Starting 3 milestone image generation for session ${sessionId}`);
+
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
+
+    // Milestone 1: Pencil sketch (outlines only, no shading)
+    console.log("🎨 Generating milestone 1: Pencil sketch...");
+    const sketchPrompt = `Create a simple pencil sketch showing ONLY the outlines and contours of this artwork.
+Requirements:
+- Show ONLY clean line work - no shading, no hatching, no tonal values
+- Just the basic shapes and outlines
+- Light pencil lines on white paper/canvas
+- No painting, no color - pure line drawing only
+- Clear structural lines showing the composition
+
+This is for teaching beginners how to start a ${medium} painting by sketching first.`;
+
+    const sketchResult = await model.generateContent([
+      sketchPrompt,
+      { inlineData: { data: referenceImageBase64, mimeType: referenceImageMimeType } }
+    ]);
+
+    let milestone1 = null;
+    const sketchParts = sketchResult.response.candidates?.[0]?.content?.parts;
+    if (sketchParts) {
+      for (const part of sketchParts) {
+        if (part.inlineData) {
+          const base64Image = part.inlineData.data;
+          const mimeType = part.inlineData.mimeType || "image/png";
+          milestone1 = `data:${mimeType};base64,${base64Image}`;
+          console.log("✅ Milestone 1 generated (pencil sketch)");
+          break;
+        }
+      }
+    }
+
+    // Milestone 2: Underpainting/Base colors
+    console.log("🎨 Generating milestone 2: Underpainting...");
+    const underpaintingPrompt = `Create an image showing this ${medium} painting at the underpainting stage.
+Requirements:
+- Light pencil sketch still visible underneath
+- Block in basic color shapes with thin, transparent washes
+- Focus on getting the overall color composition right, not details
+- Colors should be lighter and less saturated than final
+- Large, loose brush strokes covering main areas
+- No details yet - just establishing the color foundation
+- Realistic ${medium} paint texture with visible brush marks
+
+This shows the initial color blocking stage where we establish the overall palette.`;
+
+    const underpaintingResult = await model.generateContent([
+      underpaintingPrompt,
+      { inlineData: { data: referenceImageBase64, mimeType: referenceImageMimeType } }
+    ]);
+
+    let milestone2 = null;
+    const underpaintingParts = underpaintingResult.response.candidates?.[0]?.content?.parts;
+    if (underpaintingParts) {
+      for (const part of underpaintingParts) {
+        if (part.inlineData) {
+          const base64Image = part.inlineData.data;
+          const mimeType = part.inlineData.mimeType || "image/png";
+          milestone2 = `data:${mimeType};base64,${base64Image}`;
+          console.log("✅ Milestone 2 generated (underpainting)");
+          break;
+        }
+      }
+    }
+
+    // Milestone 3: Final painting (95% complete, before final touches)
+    console.log("🎨 Generating milestone 3: Near completion...");
+    const finalPrompt = `Create an image showing this ${medium} painting essentially complete, about 95% done.
+Requirements:
+- The painting looks finished with all major elements complete
+- Proper colors, values, and details throughout
+- Shows professional ${medium} paint application
+- May be missing only the tiniest final highlights or edge refinements
+- Realistic paint texture and technique
+- Composition is fully resolved
+- All details are in place
+
+This shows what the painting looks like just before final touches and highlights are added.`;
+
+    const finalResult = await model.generateContent([
+      finalPrompt,
+      { inlineData: { data: referenceImageBase64, mimeType: referenceImageMimeType } }
+    ]);
+
+    let milestone3 = null;
+    const finalParts = finalResult.response.candidates?.[0]?.content?.parts;
+    if (finalParts) {
+      for (const part of finalParts) {
+        if (part.inlineData) {
+          const base64Image = part.inlineData.data;
+          const mimeType = part.inlineData.mimeType || "image/png";
+          milestone3 = `data:${mimeType};base64,${base64Image}`;
+          console.log("✅ Milestone 3 generated (near completion)");
+          break;
+        }
+      }
+    }
+
+    // Save milestone images to database
+    const session = await prisma.coachingSession.findUnique({
+      where: { sessionId },
+      select: { id: true, paintingGuide: true },
+    });
+
+    if (session) {
+      const guide = JSON.parse(session.paintingGuide);
+
+      // Add milestone images to the guide
+      guide.milestoneImages = {
+        sketch: milestone1,
+        underpainting: milestone2,
+        nearComplete: milestone3
+      };
+
+      await prisma.coachingSession.update({
+        where: { sessionId },
+        data: { paintingGuide: JSON.stringify(guide) }
+      });
+
+      console.log("✅ Milestone images saved to database");
+    }
+
+    console.log("🎉 3 milestone image generation completed");
+  } catch (error) {
+    console.error("❌ Error generating milestone images:", error);
+  }
 }
 
 // Generate an intelligent title based on image analysis
@@ -369,6 +512,13 @@ Return ONLY valid JSON, no other text. DO NOT include markdown code blocks or ex
         ];
       }
 
+      // Image generation will happen synchronously before returning response
+      // Using Google Gemini to generate 3 milestone images (sketch, underpainting, near-complete)
+      console.log("=== STEP 3: PREPARING FOR 3 MILESTONE IMAGE GENERATION ===");
+
+      const enableImageGeneration = process.env.ENABLE_STEP_IMAGES === 'true';
+      console.log("Image generation enabled:", enableImageGeneration);
+
       // Generate quick guide first
       let quickGuide = await generateQuickGuide(base64, mimeType, medium);
 
@@ -483,14 +633,14 @@ Return ONLY valid JSON, no other text. DO NOT include markdown code blocks or ex
             paintColors: ["Titanium White", "Ultramarine Blue", "Cadmium Yellow", "Alizarin Crimson", "Burnt Sienna", "Phthalo Green"],
             brushes: ["Round #6", "Flat 1-inch", "Filbert #8", "Detail Round #2"],
             palette: ["Palette for mixing colors", "Paper towels", "Water cup"],
-            otherMaterials: ["Canvas 16x20", "Easel", "Palette knife"]
+            otherMaterials: ["Canvas 16x20", "Easel", "Sketching pencil (HB or 2B)", "Kneaded eraser", "Palette knife"]
           },
           steps: [
             {
               stepNumber: 1,
               stepTitle: "Sketch the Composition",
-              instructionText: "Lightly sketch the main shapes and composition with a pencil or thin brush. Focus on proportions and placement.",
-              materials: ["Pencil or thin brush", "Canvas"],
+              instructionText: "Lightly sketch the main shapes and composition with a pencil. Focus on proportions and placement.",
+              materials: ["Sketching pencil (HB or 2B)", "Canvas"],
               whyItMatters: "This foundation ensures accurate placement before adding paint."
             },
             {
@@ -542,12 +692,37 @@ Return ONLY valid JSON, no other text. DO NOT include markdown code blocks or ex
         };
       }
 
+      // Generate 3 milestone images synchronously (user waits for images before seeing lesson)
+      if (enableImageGeneration) {
+        console.log("🚀 Starting 3 milestone image generation with Gemini...");
+        try {
+          await generate3MilestoneImages(
+            sessionId,
+            base64,
+            mimeType,
+            medium
+          );
+          console.log("✅ All 3 milestone images generated successfully");
+        } catch (error: unknown) {
+          console.error("❌ Milestone image generation failed:", error);
+          // Continue even if image generation fails
+        }
+      }
+
+      // Fetch the updated session with milestone images
+      const updatedSession = await prisma.coachingSession.findUnique({
+        where: { sessionId },
+        select: { paintingGuide: true },
+      });
+
+      const finalGuide = updatedSession ? JSON.parse(updatedSession.paintingGuide) : completeGuide;
+
       return NextResponse.json({
         session_id: sessionId,
         message: firstMessage,
         step: 0,
         total_steps: coachPlan.length,
-        painting_guide: completeGuide,
+        painting_guide: finalGuide,
         estimated_time: estimatedTime,
         artwork_title: aiTitle,
       });
@@ -835,14 +1010,14 @@ CRITICAL: Return ONLY valid JSON with this EXACT structure:
     "paintColors": ["Titanium White", "Ultramarine Blue", "etc"],
     "brushes": ["Round #6", "Flat 1-inch", "etc"],
     "palette": ["Palette for mixing colors", "Paper towels", "Water cup (for watercolor/acrylic)"],
-    "otherMaterials": ["Canvas 16x20", "Easel", "etc"]
+    "otherMaterials": ["Canvas 16x20", "Easel", "Sketching pencils (HB or 2B)", "Kneaded eraser", "etc"]
   },
   "steps": [
     {
       "stepNumber": 1,
       "stepTitle": "Brief title (max 4 words)",
       "instructionText": "One clear, actionable instruction. Maximum 2 sentences, under 240 characters.",
-      "materials": ["Specific items needed for THIS step only"],
+      "materials": ["Sketching pencil (HB or 2B)", "Canvas or paper", "Other items needed for THIS step"],
       "whyItMatters": "One sentence explaining why this step is important"
     }
   ],
@@ -863,6 +1038,10 @@ Requirements:
 - Each step should be completable in one sitting
 - Be specific and actionable
 - IMPORTANT: Always include "palette" in the supplies with items like "Palette for mixing colors", "Paper towels", and "Water cup (for watercolor/acrylic)" or "Odorless mineral spirits (for oil paints)"
+- IMPORTANT: Always include sketching supplies in "otherMaterials": "Sketching pencil (HB or 2B)" and "Kneaded eraser" since students will use these to sketch before painting
+- CRITICAL: Step 1 MUST be about sketching the initial composition with a pencil
+- CRITICAL: Step 1's "materials" array MUST start with a SPECIFIC pencil type like "Sketching pencil (HB or 2B)" or "Graphite pencil (2B)" - NEVER just say "pencil" without specifying the type
+- The instructionText for Step 1 should mention using the specific pencil type
 
 Product Links Requirements:
 - Recommend 5-8 high-quality, beginner-friendly products available on Amazon

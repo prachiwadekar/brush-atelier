@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Hand } from "lucide-react";
+// import { Hand } from "lucide-react"; // Removed - will be added back with chatbot later
 import { REFERENCE_LESSONS } from "@/lib/reference-lessons";
 
 // Image compression utility
@@ -217,22 +217,19 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const [showReferenceSection, setShowReferenceSection] = useState(false);
   const [showUploadedImage, setShowUploadedImage] = useState(true);
   const [showImageZoom, setShowImageZoom] = useState(false);
+  const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
   const [currentTipPage, setCurrentTipPage] = useState(0);
   const [activeSwipeScreen, setActiveSwipeScreen] = useState<'guidance' | 'chatbot'>('guidance');
   const [swipeStartX, setSwipeStartX] = useState<number | null>(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
 
-  // Tip-specific chatbot state
-  const [tipQuestion, setTipQuestion] = useState('');
-  const [tipChatHistory, setTipChatHistory] = useState<Array<{role: 'user' | 'coach', message: string}>>([]);
-  const [isAskingCoach, setIsAskingCoach] = useState(false);
-  const [showFloatingChat, setShowFloatingChat] = useState(false);
+  // Chatbot removed - will be added back later
   const [isDragging, setIsDragging] = useState(false);
   const [artworkTitle, setArtworkTitle] = useState<string | null>(null);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const tipChatEndRef = useRef<HTMLDivElement>(null);
+  // const tipChatEndRef = useRef<HTMLDivElement>(null); // Removed - will be added back with chatbot later
   const fileInputRef = useRef<HTMLInputElement>(null);
   const critiqueFileInputRef = useRef<HTMLInputElement>(null);
   const critiqueReferenceInputRef = useRef<HTMLInputElement>(null);
@@ -449,10 +446,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     if (activeView === "portfolio") {
       loadPortfolioItems();
     }
-    // Close floating chat when navigating away from active session
-    if (activeView !== "new-artwork") {
-      setShowFloatingChat(false);
-    }
+    // Chatbot removed - will be added back later
   }, [activeView]);
 
   // Cleanup speech synthesis on unmount or page change
@@ -497,6 +491,54 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
       paintingGuideKeys: paintingGuide ? Object.keys(paintingGuide) : null
     });
   }, [paintingGuide]);
+
+  // Poll for updated images in background
+  useEffect(() => {
+    if (!coachingSessionId || !paintingGuide) return;
+
+    // Check if we already have all 5 milestone images
+    const milestoneImages = paintingGuide.milestoneImages;
+    const hasAllMilestones = milestoneImages?.sketch && milestoneImages?.underpainting && milestoneImages?.midStage && milestoneImages?.advanced && milestoneImages?.nearComplete;
+
+    if (hasAllMilestones) return; // All milestone images are loaded
+
+    console.log(`📡 Polling for milestone images...`);
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/coaching-session/refresh?session_id=${coachingSessionId}`);
+        if (response.ok) {
+          const data = await response.json();
+
+          // Check if we got new milestone images
+          const newMilestones = data.painting_guide?.milestoneImages;
+          if (newMilestones && (newMilestones.sketch || newMilestones.underpainting || newMilestones.midStage || newMilestones.advanced || newMilestones.nearComplete)) {
+            console.log(`✅ Found new milestone images! Updating...`);
+            setPaintingGuide(data.painting_guide);
+
+            // Stop polling if we have all 5 images
+            if (newMilestones.sketch && newMilestones.underpainting && newMilestones.midStage && newMilestones.advanced && newMilestones.nearComplete) {
+              clearInterval(pollInterval);
+              console.log("🎉 All 5 milestone images loaded!");
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error polling for milestone images:", error);
+      }
+    }, 5000); // Poll every 5 seconds
+
+    // Stop polling after 10 minutes (5 images may take longer)
+    const timeout = setTimeout(() => {
+      clearInterval(pollInterval);
+      console.log("⏱️ Stopped polling for milestone images (timeout)");
+    }, 600000);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(timeout);
+    };
+  }, [coachingSessionId, paintingGuide]);
 
   // Trigger critique when image is uploaded
   useEffect(() => {
@@ -721,10 +763,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
           }
         }
 
-        if (tipMessages.length > 0) {
-          console.log('Restoring tip chat history:', tipMessages.length, 'messages');
-          setTipChatHistory(tipMessages);
-        }
+        // Chatbot removed - will be added back later
 
         // Switch to new artwork view to show the coaching session
         onViewChange("new-artwork");
@@ -748,7 +787,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 90) return prev;
-        return prev + Math.random() * 15;
+        const next = prev + Math.random() * 15;
+        return Math.min(next, 90); // Cap at 90% during loading
       });
     }, 500);
 
@@ -863,7 +903,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 95) return prev;
-        return prev + Math.random() * 20;
+        const next = prev + Math.random() * 20;
+        return Math.min(next, 95); // Cap at 95% during loading
       });
     }, 200);
 
@@ -980,7 +1021,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         ]);
 
         // Clear tip chat history for new session
-        setTipChatHistory([]);
 
         // Start coaching session automatically with the uploaded file
         // Pass the file directly to avoid race condition with state updates
@@ -1046,7 +1086,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         ]);
 
         // Clear tip chat history for new session
-        setTipChatHistory([]);
 
         // Start coaching session automatically with the uploaded file
         await startCoachingSessionAutomatically(defaultMedium, file);
@@ -1085,8 +1124,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     setEstimatedTime(null);
     setShowSuppliesModal(false);
     setCurrentTipPage(0); // Reset guidance pagination
-    setTipChatHistory([]); // Clear tip chat history for new session
-    setShowFloatingChat(false); // Close floating chat widget
     setArtworkTitle(null); // Clear artwork title
     setShowMaterialsOverview(false); // Reset materials overview
 
@@ -1261,61 +1298,14 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     }
   };
 
-  // Handle asking coach about current tip
-  const handleAskTipQuestion = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!tipQuestion.trim() || !paintingGuide?.coachPlan?.[currentTipPage]) return;
-
-    const userMessage = tipQuestion.trim();
-    setTipQuestion('');
-
-    // Add user message to chat
-    setTipChatHistory(prev => [...prev, { role: 'user', message: userMessage }]);
-    setIsAskingCoach(true);
-
-    try {
-      // Create context for the AI about the current tip
-      const currentTip = paintingGuide.coachPlan[currentTipPage];
-      const contextMessage = `I'm helping an artist with this painting technique: "${currentTip.coaching_point}" (Phase: ${currentTip.focus_area}). They asked: "${userMessage}". Please provide a helpful, specific answer about this technique.`;
-
-      const formData = new FormData();
-      formData.append("action", "continue");
-      formData.append("session_id", coachingSessionId || '');
-      formData.append("message", contextMessage);
-
-      const response = await fetch("/api/coaching-session", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setTipChatHistory(prev => [...prev, { role: 'coach', message: data.message }]);
-      } else {
-        setTipChatHistory(prev => [...prev, { role: 'coach', message: "I'm having trouble answering that right now. Could you try rephrasing your question?" }]);
-      }
-    } catch (error) {
-      console.error("Error asking coach:", error);
-      setTipChatHistory(prev => [...prev, { role: 'coach', message: "Sorry, something went wrong. Please try again." }]);
-    } finally {
-      setIsAskingCoach(false);
-    }
-  };
-
-  // Auto-scroll tip chat to bottom when new messages arrive
-  useEffect(() => {
-    if (tipChatEndRef.current) {
-      tipChatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [tipChatHistory]);
+  // Chatbot removed - will be added back later
 
   // Handle ESC key to close zoom modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && showImageZoom) {
         setShowImageZoom(false);
+        setZoomedImageUrl(null);
       }
     };
 
@@ -1443,6 +1433,13 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                     className="space-y-4 bg-white/50 p-4 rounded-lg flex flex-col w-1/3 min-w-[250px]"
                   >
                     <div className="space-y-3">
+                      {/* AI-Generated Artwork Title */}
+                      {artworkTitle && (
+                        <div className="px-2">
+                          <h3 className="text-lg font-bold text-[#1F2933] text-center">{artworkTitle}</h3>
+                        </div>
+                      )}
+
                       {/* Reference Image Section */}
                       {showUploadedImage && (
                         <div className="space-y-2">
@@ -1478,10 +1475,50 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                             </button>
                           </div>
                           </div>
-                          {/* AI-Generated Artwork Title */}
-                          {artworkTitle && (
-                            <div className="px-2">
-                              <h3 className="text-sm font-semibold text-[#1F2933]">{artworkTitle}</h3>
+
+                          {/* Paint Colors - Show directly under reference image */}
+                          {!showMaterialsOverview && paintingGuide && getSupplies() && (
+                            <div className="px-2 mt-3">
+                              <div className="flex flex-wrap gap-2">
+                                {getAllRequiredColors().map((color: string, index: number) => (
+                                  <button
+                                    key={index}
+                                    onClick={() => {
+                                      setSelectedColorForMixing(color);
+                                      setShowColorMixModal(true);
+                                    }}
+                                    className="group relative"
+                                    title={`${color} - ${isStandardColor(color) ? 'Primary Color' : 'Click for mixing guide'}`}
+                                  >
+                                    <div
+                                      className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-blue-500 transition-all cursor-pointer hover:scale-110 shadow-sm"
+                                      style={{ backgroundColor: getColorHex(color) }}
+                                    />
+                                    {/* Tooltip on hover */}
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg min-w-max">
+                                      <div className="font-semibold text-center text-[10px]">{color}</div>
+                                      <div className="text-[9px] text-gray-300 text-center">
+                                        {isStandardColor(color) ? 'Primary' : 'Click for mixing'}
+                                      </div>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Other Supplies Button */}
+                          {!showMaterialsOverview && paintingGuide && getSupplies() && (
+                            <div className="px-2 mt-3">
+                              <button
+                                onClick={() => setShowSuppliesModal(true)}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border-2 border-[#2563EB] text-[#2563EB] hover:bg-blue-50 rounded-lg transition-all"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+                                </svg>
+                                <span className="text-sm font-semibold">Other Supplies</span>
+                              </button>
                             </div>
                           )}
 
@@ -1710,7 +1747,14 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
                     {/* Analyzing Progress */}
                     {isAnalyzing && (
-                      <div className="flex items-center justify-center h-full">
+                      <div className="flex flex-col items-center justify-center h-full gap-4">
+                        {/* Creative waiting message */}
+                        <div className="text-center max-w-lg px-4">
+                          <p className="text-base text-gray-700 leading-relaxed font-medium">
+                            ⏱️ This can take up to 2 minutes. Perfect time to grab a coffee ☕, get a snack 🍪, or do some stretches! 🧘
+                          </p>
+                        </div>
+
                         <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full">
                           <div className="text-center mb-6">
                             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
@@ -1728,12 +1772,12 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                           <div className="space-y-3">
                             <div className="flex items-center justify-between text-sm font-medium text-[#1F2933]">
                               <span>Progress</span>
-                              <span>{Math.round(progress)}%</span>
+                              <span>{Math.min(Math.round(progress), 100)}%</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                               <div
                                 className="bg-gradient-to-r from-blue-600 to-purple-600 h-3 rounded-full transition-all duration-500 ease-out"
-                                style={{ width: `${progress}%` }}
+                                style={{ width: `${Math.min(progress, 100)}%` }}
                               />
                             </div>
                           </div>
@@ -1852,74 +1896,192 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         {/* Guidance Content */}
                         <div className="relative flex-1 flex flex-col">
                           <div className="flex-1 flex flex-col h-full">
-                              {/* Phase Label with Feedback and Voiceover Buttons */}
+                              {/* Phase Label with Navigation and Feedback Buttons */}
                               <div className="mb-3 flex items-center justify-between">
                                 <span className="text-base font-bold text-[#1F2933]">
                                   {paintingGuide.coachPlan[currentTipPage].focus_area}
                                 </span>
-                                <div className="flex items-center gap-2">
-                                  {/* Ask AI Coach Button */}
-                                  <button
-                                    onClick={() => {
-                                      console.log('Ask AI Coach button clicked');
-                                      setShowFloatingChat(!showFloatingChat);
-                                    }}
-                                    className="p-1.5 rounded-lg transition-all text-[#2563EB] hover:text-[#1D4ED8] hover:bg-blue-50"
-                                    title="Ask AI Coach"
-                                    aria-label="Open chat with AI coach"
-                                  >
-                                    <Hand className="w-4 h-4" />
-                                  </button>
+                                <div className="flex items-center gap-3">
+                                  {/* Navigation Arrows */}
+                                  <div className="flex items-center gap-1">
+                                    {/* Back to Start Icon */}
+                                    <button
+                                      onClick={() => setCurrentTipPage(0)}
+                                      disabled={currentTipPage === 0}
+                                      className={`p-1 rounded-lg transition-all ${
+                                        currentTipPage === 0
+                                          ? 'text-gray-300 cursor-not-allowed'
+                                          : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
+                                      }`}
+                                      title="Back to start"
+                                      aria-label="Back to start"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
+                                      </svg>
+                                    </button>
+
+                                    {/* Previous Icon */}
+                                    <button
+                                      onClick={() => setCurrentTipPage(Math.max(0, currentTipPage - 1))}
+                                      disabled={currentTipPage === 0}
+                                      className={`p-1 rounded-lg transition-all ${
+                                        currentTipPage === 0
+                                          ? 'text-gray-300 cursor-not-allowed'
+                                          : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
+                                      }`}
+                                      title="Previous"
+                                      aria-label="Previous"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                                      </svg>
+                                    </button>
+
+                                    {/* Page Indicator */}
+                                    <span className="text-xs text-[#1F2933]/60 min-w-[45px] text-center">
+                                      {currentTipPage + 1} / {paintingGuide.coachPlan.length}
+                                    </span>
+
+                                    {/* Next Icon */}
+                                    <button
+                                      onClick={() => setCurrentTipPage(Math.min(paintingGuide.coachPlan.length - 1, currentTipPage + 1))}
+                                      disabled={currentTipPage === paintingGuide.coachPlan.length - 1}
+                                      className={`p-1 rounded-lg transition-all ${
+                                        currentTipPage === paintingGuide.coachPlan.length - 1
+                                          ? 'text-gray-300 cursor-not-allowed'
+                                          : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
+                                      }`}
+                                      title="Next"
+                                      aria-label="Next"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                      </svg>
+                                    </button>
+                                  </div>
+
+                                  {/* Separator */}
+                                  <div className="w-px h-5 bg-gray-300"></div>
 
                                   {/* Feedback Buttons */}
-                                  <button
-                                    onClick={() => handleFeedback('thumbs-up')}
-                                    className="p-1.5 rounded-lg transition-all text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                                    title="This lesson is helpful"
-                                    aria-label="Thumbs up"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904M14.25 9h2.25M5.904 18.75c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 01-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 10.203 4.167 9.75 5 9.75h1.053c.472 0 .745.556.5.96a8.958 8.958 0 00-1.302 4.665c0 1.194.232 2.333.654 3.375z" />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    onClick={() => handleFeedback('thumbs-down')}
-                                    className="p-1.5 rounded-lg transition-all text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                                    title="This lesson needs improvement"
-                                    aria-label="Thumbs down"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 15h2.25m8.024-9.75c.011.05.028.1.052.148.591 1.2.924 2.55.924 3.977a8.96 8.96 0 01-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398C20.613 14.547 19.833 15 19 15h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 00.303-.54m.023-8.25H16.48a4.5 4.5 0 01-1.423-.23l-3.114-1.04a4.5 4.5 0 00-1.423-.23H6.504c-.618 0-1.217.247-1.605.729A11.95 11.95 0 002.25 12c0 .434.023.863.068 1.285C2.427 14.306 3.346 15 4.372 15h3.126c.618 0 .991.724.725 1.282A7.471 7.471 0 007.5 19.5a2.25 2.25 0 002.25 2.25.75.75 0 00.75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 002.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384" />
-                                    </svg>
-                                  </button>
-
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={() => handleFeedback('thumbs-up')}
+                                      className="p-1 rounded-lg transition-all text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                      title="This lesson is helpful"
+                                      aria-label="Thumbs up"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904M14.25 9h2.25M5.904 18.75c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 01-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 10.203 4.167 9.75 5 9.75h1.053c.472 0 .745.556.5.96a8.958 8.958 0 00-1.302 4.665c0 1.194.232 2.333.654 3.375z" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      onClick={() => handleFeedback('thumbs-down')}
+                                      className="p-1 rounded-lg transition-all text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                                      title="This lesson needs improvement"
+                                      aria-label="Thumbs down"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 15h2.25m8.024-9.75c.011.05.028.1.052.148.591 1.2.924 2.55.924 3.977a8.96 8.96 0 01-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398C20.613 14.547 19.833 15 19 15h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 00.303-.54m.023-8.25H16.48a4.5 4.5 0 01-1.423-.23l-3.114-1.04a4.5 4.5 0 00-1.423-.23H6.504c-.618 0-1.217.247-1.605.729A11.95 11.95 0 002.25 12c0 .434.023.863.068 1.285C2.427 14.306 3.346 15 4.372 15h3.126c.618 0 .991.724.725 1.282A7.471 7.471 0 007.5 19.5a2.25 2.25 0 002.25 2.25.75.75 0 00.75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 002.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384" />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* Coaching Point with Image Placeholder */}
-                              <div className="mb-4 flex gap-4">
-                                {/* Image Placeholder */}
-                                <div className="flex-shrink-0 w-48 h-48 bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center">
-                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 text-gray-400">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                                  </svg>
-                                </div>
+                              {/* Coaching Point */}
+                              <div className="mb-4">
+                                <p className="text-base text-[#1F2933] leading-relaxed">
+                                  {paintingGuide.coachPlan[currentTipPage].coaching_point}
+                                </p>
 
-                                {/* Coaching Text */}
-                                <div className="flex-1">
-                                  <p className="text-base text-[#1F2933] leading-relaxed">
-                                    {paintingGuide.coachPlan[currentTipPage].coaching_point}
+                                {/* Recommended Brush - Inline */}
+                                {paintingGuide.coachPlan[currentTipPage].recommended_brush && (
+                                  <p className="text-base text-[#1F2933] leading-relaxed mt-3">
+                                    <span className="font-semibold text-green-800">Recommended brush: </span>
+                                    {paintingGuide.coachPlan[currentTipPage].recommended_brush}
                                   </p>
-
-                                  {/* Recommended Brush - Inline */}
-                                  {paintingGuide.coachPlan[currentTipPage].recommended_brush && (
-                                    <p className="text-base text-[#1F2933] leading-relaxed mt-3">
-                                      <span className="font-semibold text-green-800">Recommended brush: </span>
-                                      {paintingGuide.coachPlan[currentTipPage].recommended_brush}
-                                    </p>
-                                  )}
-                                </div>
+                                )}
                               </div>
+
+                              {/* Milestone Images - Visual Progress Guide */}
+                              {paintingGuide.milestoneImages && (
+                                <div className="mb-6">
+                                  <h4 className="text-sm font-bold text-[#1F2933] mb-3">Visual Progress Guide</h4>
+                                  <div className="grid grid-cols-3 gap-3">
+                                    {paintingGuide.milestoneImages.sketch && (
+                                      <div className="flex flex-col">
+                                        <div
+                                          className="bg-gray-100 border-2 border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group"
+                                          onClick={() => {
+                                            setZoomedImageUrl(paintingGuide.milestoneImages.sketch);
+                                            setShowImageZoom(true);
+                                          }}
+                                        >
+                                          <img
+                                            src={paintingGuide.milestoneImages.sketch}
+                                            alt="Step 1: Sketch"
+                                            className="w-full h-auto object-cover"
+                                          />
+                                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                            </svg>
+                                          </div>
+                                        </div>
+                                        <p className="text-xs text-gray-600 mt-1 text-center">1. Sketch</p>
+                                      </div>
+                                    )}
+                                    {paintingGuide.milestoneImages.underpainting && (
+                                      <div className="flex flex-col">
+                                        <div
+                                          className="bg-gray-100 border-2 border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group"
+                                          onClick={() => {
+                                            setZoomedImageUrl(paintingGuide.milestoneImages.underpainting);
+                                            setShowImageZoom(true);
+                                          }}
+                                        >
+                                          <img
+                                            src={paintingGuide.milestoneImages.underpainting}
+                                            alt="Step 2: Underpainting"
+                                            className="w-full h-auto object-cover"
+                                          />
+                                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                            </svg>
+                                          </div>
+                                        </div>
+                                        <p className="text-xs text-gray-600 mt-1 text-center">2. Base</p>
+                                      </div>
+                                    )}
+                                    {paintingGuide.milestoneImages.nearComplete && (
+                                      <div className="flex flex-col">
+                                        <div
+                                          className="bg-gray-100 border-2 border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group"
+                                          onClick={() => {
+                                            setZoomedImageUrl(paintingGuide.milestoneImages.nearComplete);
+                                            setShowImageZoom(true);
+                                          }}
+                                        >
+                                          <img
+                                            src={paintingGuide.milestoneImages.nearComplete}
+                                            alt="Step 3: Nearly Complete"
+                                            className="w-full h-auto object-cover"
+                                          />
+                                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                            </svg>
+                                          </div>
+                                        </div>
+                                        <p className="text-xs text-gray-600 mt-1 text-center">3. Final</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
 
                               {/* Full Width Sections Below */}
                               <div>
@@ -1937,150 +2099,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                     {paintingGuide.coachPlan[currentTipPage].common_mistakes}
                                   </p>
                                 </div>
-                              </div>
-                            )}
-
-                            {/* Navigation Section */}
-                            <div className="flex items-center justify-center gap-2 mb-4">
-                              {/* Back to Start Icon */}
-                              <button
-                                onClick={() => setCurrentTipPage(0)}
-                                disabled={currentTipPage === 0}
-                                className={`p-1 rounded-lg transition-all ${
-                                  currentTipPage === 0
-                                    ? 'text-gray-300 cursor-not-allowed'
-                                    : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
-                                }`}
-                                title="Back to start"
-                                aria-label="Back to start"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
-                                </svg>
-                              </button>
-
-                              {/* Previous Icon */}
-                              <button
-                                onClick={() => setCurrentTipPage(Math.max(0, currentTipPage - 1))}
-                                disabled={currentTipPage === 0}
-                                className={`p-1 rounded-lg transition-all ${
-                                  currentTipPage === 0
-                                    ? 'text-gray-300 cursor-not-allowed'
-                                    : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
-                                }`}
-                                title="Previous"
-                                aria-label="Previous"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                                </svg>
-                              </button>
-
-                              {/* Page Indicator */}
-                              <span className="text-xs text-[#1F2933]/60 min-w-[50px] text-center">
-                                {currentTipPage + 1} / {paintingGuide.coachPlan.length}
-                              </span>
-
-                              {/* Next Icon */}
-                              <button
-                                onClick={() => setCurrentTipPage(Math.min(paintingGuide.coachPlan.length - 1, currentTipPage + 1))}
-                                disabled={currentTipPage === paintingGuide.coachPlan.length - 1}
-                                className={`p-1 rounded-lg transition-all ${
-                                  currentTipPage === paintingGuide.coachPlan.length - 1
-                                    ? 'text-gray-300 cursor-not-allowed'
-                                    : 'text-[#1F2933]/60 hover:text-[#1F2933] hover:bg-gray-100'
-                                }`}
-                                title="Next"
-                                aria-label="Next"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                                </svg>
-                              </button>
-                            </div>
-
-                            {/* Materials Section */}
-                            {getSupplies() && (
-                              <div className="mb-4">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="text-sm font-bold text-[#1F2933] flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
-                                    </svg>
-                                    Materials Needed
-                                  </h4>
-                                  <button
-                                    onClick={() => setShowSuppliesSection(!showSuppliesSection)}
-                                    className="text-xs text-[#2563EB] hover:text-[#1D4ED8] font-semibold"
-                                  >
-                                    {showSuppliesSection ? 'Hide' : 'Show'}
-                                  </button>
-                                </div>
-
-                                {showSuppliesSection && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-                                    {/* Paint Colors */}
-                                    <div className="p-3 rounded-lg border border-gray-200">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-base">🎨</span>
-                                        <h5 className="font-bold text-[#1F2933]">Paint Colors</h5>
-                                      </div>
-                                      <div className="flex flex-wrap gap-2">
-                                        {getAllRequiredColors().map((color: string, index: number) => (
-                                          <div
-                                            key={index}
-                                            className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-blue-500 transition-all cursor-pointer hover:scale-110 relative group"
-                                            style={{ backgroundColor: getColorHex(color) }}
-                                            onClick={() => {
-                                              setSelectedColorForMixing(color);
-                                              setShowColorMixModal(true);
-                                            }}
-                                          >
-                                            {/* Tooltip on hover - positioned to avoid cutoff */}
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg min-w-max">
-                                              <div className="font-semibold text-center">{color}</div>
-                                              <div className="text-[10px] text-gray-300 mt-0.5 text-center">
-                                                {isStandardColor(color) ? 'Primary Color' : 'Click for mixing guide'}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-
-                                    {/* Brushes */}
-                                    <div className="p-3 rounded-lg border border-gray-200">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-base">🖌️</span>
-                                        <h5 className="font-bold text-[#1F2933]">Brushes</h5>
-                                      </div>
-                                      <ul className="space-y-1">
-                                        {getSupplies()!.brushes.map((brush: string, index: number) => (
-                                          <li key={index} className="flex items-start gap-2 text-xs text-[#1F2933]">
-                                            <span className="text-gray-400 mt-0.5">•</span>
-                                            <span>{brush}</span>
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-
-                                    {/* Other Materials */}
-                                    <div className="p-3 rounded-lg border border-gray-200">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-base">✨</span>
-                                        <h5 className="font-bold text-[#1F2933]">Other Materials</h5>
-                                      </div>
-                                      <ul className="space-y-1">
-                                        {getSupplies()!.otherMaterials.map((material: string, index: number) => (
-                                          <li key={index} className="flex items-start gap-2 text-xs text-[#1F2933]">
-                                            <span className="text-gray-400 mt-0.5">•</span>
-                                            <span>{material}</span>
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    </div>
-                                  </div>
-                                )}
                               </div>
                             )}
 
@@ -2222,7 +2240,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🎨</div>
                   <p className="text-[#1F2933]/70 mb-2">Your portfolio is empty</p>
-                  <p className="text-sm text-[#1F2933]/50">Create some artwork in the "Guided Session" tab and add them to your portfolio!</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -2821,114 +2838,97 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         </div>
       )}
 
-      {/* Supplies Modal */}
+      {/* Other Supplies Modal */}
       {showSuppliesModal && getSupplies() && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={() => setShowSuppliesModal(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-2xl">
+            <div className="px-8 py-5 rounded-t-xl border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
-                  </svg>
-                  <h2 className="text-2xl font-bold">What You'll Need</h2>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-blue-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">Other Supplies</h3>
+                    <p className="text-sm text-gray-600">Brushes and materials you'll need</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setShowSuppliesModal(false)}
-                  className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-lg transition-all"
-                  title="Close"
+                  className="text-gray-400 hover:text-gray-600 transition-colors text-3xl leading-none"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  ×
                 </button>
               </div>
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 space-y-6">
-              {/* Colors */}
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-5 border-2 border-blue-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-2xl">🎨</span>
-                  <h3 className="text-lg font-bold text-[#1F2933]">Paint Colors</h3>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {getAllRequiredColors().map((color: string, index: number) => (
-                    <div key={index} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
-                      <div
-                        className="w-6 h-6 rounded-full border-2 border-gray-300"
-                        style={{ backgroundColor: getColorHex(color) }}
-                      />
-                      <span className="text-sm font-medium text-[#1F2933]">{color}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
+            <div className="p-8 space-y-5">
               {/* Brushes */}
-              <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-5 border-2 border-orange-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-2xl">🖌️</span>
-                  <h3 className="text-lg font-bold text-[#1F2933]">Brushes</h3>
+              <div className="bg-amber-50 border-l-4 border-amber-400 p-5 rounded-r-lg">
+                <div className="flex items-start gap-4">
+                  <span className="text-3xl">🖌️</span>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900 mb-3 text-lg">Brushes</h4>
+                    <ul className="space-y-2">
+                      {getSupplies()!.brushes.map((brush: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2 text-base text-gray-700">
+                          <span className="text-[#C2410C] mt-0.5">•</span>
+                          <span>{brush}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <ul className="space-y-2">
-                  {getSupplies()!.brushes.map((brush: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-[#1F2933]">
-                      <span className="text-orange-600 mt-0.5">•</span>
-                      <span>{brush}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
 
               {/* Other Materials */}
-              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-5 border-2 border-emerald-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-2xl">✨</span>
-                  <h3 className="text-lg font-bold text-[#1F2933]">Other Materials</h3>
+              <div className="bg-gray-50 border-l-4 border-gray-400 p-5 rounded-r-lg">
+                <div className="flex items-start gap-4">
+                  <span className="text-3xl">✨</span>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900 mb-3 text-lg">Other Materials</h4>
+                    <ul className="space-y-2">
+                      {getSupplies()!.otherMaterials.map((material: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2 text-base text-gray-700">
+                          <span className="text-gray-500 mt-0.5">•</span>
+                          <span>{material}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <ul className="space-y-2">
-                  {getSupplies()!.otherMaterials.map((material: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-[#1F2933]">
-                      <span className="text-emerald-600 mt-0.5">•</span>
-                      <span>{material}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-gray-50 p-4 rounded-b-2xl border-t border-gray-200">
-              <button
-                onClick={() => setShowSuppliesModal(false)}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg"
-              >
-                Got it!
-              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* Image Zoom Modal */}
-      {showImageZoom && previewUrl && (
+      {showImageZoom && (zoomedImageUrl || previewUrl) && (
         <div
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-          onClick={() => setShowImageZoom(false)}
+          onClick={() => {
+            setShowImageZoom(false);
+            setZoomedImageUrl(null);
+          }}
         >
           <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
             {/* Close button */}
             <button
-              onClick={() => setShowImageZoom(false)}
+              onClick={() => {
+                setShowImageZoom(false);
+                setZoomedImageUrl(null);
+              }}
               className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-all z-10"
               title="Close (ESC)"
             >
@@ -2940,8 +2940,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
             {/* Zoomed Image */}
             <div className="relative w-full h-full flex items-center justify-center">
               <Image
-                src={previewUrl}
-                alt="Reference Image - Zoomed"
+                src={zoomedImageUrl || previewUrl!}
+                alt="Zoomed Image"
                 width={1920}
                 height={1080}
                 className="max-w-full max-h-full object-contain"
@@ -2957,85 +2957,6 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         </div>
       )}
 
-      {/* Floating Chat Widget */}
-      {showFloatingChat && paintingGuide?.coachPlan?.[currentTipPage] && (
-        <div className="fixed bottom-4 right-4 w-96 h-[500px] bg-white rounded-lg shadow-2xl flex flex-col z-50 border border-gray-200">
-          {/* Chat Header */}
-          <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-[#2563EB] text-white rounded-t-lg">
-            <div className="flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-              </svg>
-              <div>
-                <div className="font-semibold text-sm">Ask Your AI Coach</div>
-                <div className="text-xs opacity-90">Step {currentTipPage + 1} of {paintingGuide.coachPlan.length}</div>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowFloatingChat(false)}
-              className="hover:bg-white/20 p-1 rounded transition-colors"
-              aria-label="Close chat"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Chat Messages */}
-          <div className="flex-1 p-3 overflow-y-auto space-y-2 bg-gray-50">
-            {tipChatHistory.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-sm text-gray-600">Ask me anything about this step!</p>
-              </div>
-            ) : (
-              tipChatHistory.map((msg, index) => (
-                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[85%] rounded-lg px-3 py-2 ${
-                    msg.role === 'user'
-                      ? 'bg-[#2563EB] text-white'
-                      : 'bg-white border border-gray-200 text-[#1F2933]'
-                  }`}>
-                    <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                  </div>
-                </div>
-              ))
-            )}
-            {isAskingCoach && (
-              <div className="flex justify-start">
-                <div className="bg-white border border-gray-200 rounded-lg px-3 py-2">
-                  <p className="text-sm text-[#2563EB] italic">Coach is typing...</p>
-                </div>
-              </div>
-            )}
-            <div ref={tipChatEndRef} />
-          </div>
-
-          {/* Chat Input */}
-          <form onSubmit={handleAskTipQuestion} className="border-t border-gray-200 p-3 bg-white rounded-b-lg">
-            <div className="relative">
-              <input
-                type="text"
-                value={tipQuestion}
-                onChange={(e) => setTipQuestion(e.target.value)}
-                placeholder="Ask a question..."
-                className="w-full pr-12 py-2.5 px-3 text-sm text-[#1F2933] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-transparent"
-                disabled={isAskingCoach}
-              />
-              <button
-                type="submit"
-                disabled={!tipQuestion.trim() || isAskingCoach}
-                className="absolute right-1 top-1/2 -translate-y-1/2 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg p-2 flex items-center justify-center"
-                title="Send question"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                </svg>
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* Feedback Modal */}
       {showFeedbackModal && (

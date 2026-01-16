@@ -94,8 +94,8 @@ export default function ArtistJoinPage() {
                 <h1 className="text-xl sm:text-3xl font-bold relative">
                   <span className="text-[#C2410C]">Brush</span>{" "}
                   <span className="text-[#1F2933]">Atelier</span>
-                  <span className="absolute -top-1 sm:-top-2 -right-12 sm:-right-14 bg-[#2563EB] text-white text-[0.5rem] sm:text-xs font-bold uppercase tracking-wider px-2 py-1 rounded shadow-sm">
-                    BETA
+                  <span className="absolute -top-1 sm:-top-2 -right-12 sm:-right-14 bg-white border border-[#2563EB] text-[#2563EB] text-[0.6rem] sm:text-sm font-bold px-2.5 py-1 rounded">
+                    Beta
                   </span>
                 </h1>
               </Link>
@@ -181,8 +181,8 @@ export default function ArtistJoinPage() {
               <h1 className="text-xl sm:text-3xl font-bold relative">
                 <span className="text-[#C2410C]">Brush</span>{" "}
                 <span className="text-[#1F2933]">Atelier</span>
-                <span className="absolute -top-1 sm:-top-2 -right-12 sm:-right-14 bg-[#2563EB] text-white text-[0.5rem] sm:text-xs font-bold uppercase tracking-wider px-2 py-1 rounded shadow-sm">
-                  BETA
+                <span className="absolute -top-1 sm:-top-2 -right-12 sm:-right-14 bg-white border-2 border-[#2563EB] text-[#2563EB] text-[0.5rem] sm:text-xs font-semibold px-2 py-0.5 rounded">
+                  Beta
                 </span>
               </h1>
             </Link>

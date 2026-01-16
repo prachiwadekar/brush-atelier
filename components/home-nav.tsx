@@ -21,9 +21,9 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
               <h1 className="text-xl sm:text-3xl font-bold">
                 <span className="text-[#C2410C]">Brush</span>{" "}
                 <span className="text-[#1F2933]">Atelier</span>
-                {/* BETA Badge - More prominent */}
-                <span className="absolute -top-1 sm:-top-2 -right-12 sm:-right-14 bg-[#2563EB] text-white text-[0.5rem] sm:text-xs font-bold uppercase tracking-wider px-2 py-1 rounded shadow-sm">
-                  BETA
+                {/* Beta Badge */}
+                <span className="absolute -top-1 sm:-top-2 -right-12 sm:-right-14 bg-white border border-[#2563EB] text-[#2563EB] text-[0.6rem] sm:text-sm font-bold px-2.5 py-1 rounded">
+                  Beta
                 </span>
               </h1>
             </Link>

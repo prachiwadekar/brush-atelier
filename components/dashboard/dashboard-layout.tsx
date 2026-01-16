@@ -37,8 +37,8 @@ export default function DashboardLayout({ userName, activeView, onViewChange, on
               <h1 className="text-lg sm:text-2xl font-bold relative">
                 <span className="text-[#C2410C]">Brush</span>{" "}
                 <span className="text-[#1F2933]">Atelier</span>
-                <span className="absolute -top-1 sm:-top-2 -right-10 sm:-right-12 bg-[#2563EB] text-white text-[0.4rem] sm:text-[0.5rem] font-bold uppercase tracking-wider px-1.5 sm:px-2 py-0.5 sm:py-1 rounded shadow-sm">
-                  BETA
+                <span className="absolute -top-1 sm:-top-2 -right-10 sm:-right-12 bg-white border border-[#2563EB] text-[#2563EB] text-[0.55rem] sm:text-[0.65rem] font-bold px-2 sm:px-2.5 py-1 rounded">
+                  Beta
                 </span>
               </h1>
             </Link>

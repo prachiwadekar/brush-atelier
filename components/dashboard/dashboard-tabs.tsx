@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 // import { Hand } from "lucide-react"; // Removed - will be added back with chatbot later
-import { REFERENCE_LESSONS } from "@/lib/reference-lessons";
 
 // Image compression utility
 async function compressImage(file: File, maxSizeBytes: number): Promise<File> {
@@ -102,11 +101,13 @@ const getColorHex = (colorName: string): string => {
     'titanium white': '#FFFFFF',
     'zinc white': '#F5F5F5',
     'white': '#FFFFFF',
+    'pale white': '#FAFAFA',
 
     // Blacks
     'ivory black': '#292421',
     'mars black': '#1C1C1C',
     'black': '#000000',
+    'dark black': '#0A0A0A',
 
     // Blues
     'ultramarine blue': '#4166F5',
@@ -115,6 +116,12 @@ const getColorHex = (colorName: string): string => {
     'prussian blue': '#003153',
     'phthalo blue': '#000F89',
     'azure blue': '#007FFF',
+    'deep blue': '#1E3A8A',
+    'light blue': '#93C5FD',
+    'pale blue': '#BFDBFE',
+    'sky blue': '#87CEEB',
+    'navy blue': '#1E3A5F',
+    'blue': '#3B82F6',
 
     // Reds
     'cadmium red': '#E30022',
@@ -122,6 +129,12 @@ const getColorHex = (colorName: string): string => {
     'vermilion': '#E34234',
     'scarlet': '#FF2400',
     'rose madder': '#E33638',
+    'deep red': '#991B1B',
+    'light red': '#FCA5A5',
+    'pale red': '#FECACA',
+    'red': '#EF4444',
+    'brick red': '#CB4154',
+    'dark red': '#7F1D1D',
 
     // Yellows
     'cadmium yellow': '#FFF600',
@@ -129,23 +142,79 @@ const getColorHex = (colorName: string): string => {
     'naples yellow': '#FADA5E',
     'yellow ochre': '#CC7722',
     'raw sienna': '#D68A59',
+    'pale yellow': '#FEF9C3',
+    'light yellow': '#FEF08A',
+    'golden yellow': '#FACC15',
+    'yellow': '#EAB308',
+    'warm yellow': '#F59E0B',
 
     // Greens
     'phthalo green': '#123524',
     'viridian': '#40826D',
     'sap green': '#507D2A',
     'chromium oxide green': '#669900',
+    'deep green': '#166534',
+    'light green': '#86EFAC',
+    'pale green': '#BBF7D0',
+    'olive green': '#65A30D',
+    'forest green': '#228B22',
+    'green': '#22C55E',
 
-    // Oranges
+    // Oranges and Browns
     'cadmium orange': '#FF6600',
     'burnt sienna': '#E97451',
     'burnt umber': '#8A3324',
     'raw umber': '#826644',
+    'orange': '#F97316',
+    'pale orange': '#FED7AA',
+    'light orange': '#FDBA74',
+    'deep orange': '#EA580C',
+    'golden brown': '#996515',
+    'light brown': '#A8856C',
+    'dark brown': '#5D4037',
+    'brown': '#92400E',
+    'chocolate brown': '#7B3F00',
+    'warm brown': '#8B5A2B',
+    'earth brown': '#6B4423',
+    'tan': '#D2B48C',
+    'beige': '#F5F5DC',
+
+    // Grays
+    'warm gray': '#9CA3AF',
+    'cool gray': '#94A3B8',
+    'light gray': '#D1D5DB',
+    'dark gray': '#4B5563',
+    'pale gray': '#E5E7EB',
+    'charcoal gray': '#36454F',
+    'gray': '#6B7280',
+    'neutral gray': '#808080',
+
+    // Pinks
+    'pink': '#EC4899',
+    'pale pink': '#FBCFE8',
+    'light pink': '#F9A8D4',
+    'deep pink': '#BE185D',
+    'rose pink': '#FB7185',
+    'blush pink': '#FBB6CE',
+    'salmon pink': '#FA8072',
 
     // Purples/Violets
     'dioxazine purple': '#5C3F70',
     'quinacridone magenta': '#8E3A59',
     'violet': '#8F00FF',
+    'purple': '#A855F7',
+    'deep purple': '#7E22CE',
+    'light purple': '#D8B4FE',
+    'pale purple': '#E9D5FF',
+    'lavender': '#E6E6FA',
+    'magenta': '#D946EF',
+
+    // Creams and Skin Tones
+    'cream': '#FFFDD0',
+    'ivory': '#FFFFF0',
+    'peach': '#FFCBA4',
+    'flesh': '#FFCBA4',
+    'skin tone': '#E8BEAC',
   };
 
   // Normalize the color name for lookup
@@ -246,37 +315,50 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
   // Helper to extract all required colors including base colors needed for mixing
   const getAllRequiredColors = () => {
-    const supplies = getSupplies();
-    if (!supplies || !supplies.paintColors) return [];
-
     const allColors = new Set<string>();
 
-    // Add all colors from the materials list
-    supplies.paintColors.forEach((color: string) => {
-      allColors.add(color);
-
-      // Check if this color has a mixing recipe
-      const recipe = colorMixingRecipes[color];
-      if (recipe) {
-        // Extract base colors from the recipe text
-        // Recipe format: "Mix Color1 + Color2 + touch of Color3"
-        const recipeText = recipe.recipe;
-
-        // Check for each standard color in the recipe
-        standardColors.forEach(standardColor => {
-          if (recipeText.includes(standardColor)) {
-            allColors.add(standardColor);
-          }
-        });
-
-        // Also check for other named colors in the mixing recipes
-        Object.keys(colorMixingRecipes).forEach(mixableColor => {
-          if (recipeText.includes(mixableColor) && mixableColor !== color) {
-            allColors.add(mixableColor);
-          }
-        });
+    // First, check for colors_needed from the coaching plan (AI-generated list of all colors used)
+    const coachPlan = paintingGuide?.coachPlan;
+    if (coachPlan && Array.isArray(coachPlan) && coachPlan.length > 0) {
+      // Check if the first step or the plan itself has colors_needed
+      const colorsNeeded = paintingGuide?.colors_needed || coachPlan[0]?.colors_needed;
+      if (colorsNeeded && Array.isArray(colorsNeeded)) {
+        colorsNeeded.forEach((color: string) => allColors.add(color));
       }
-    });
+    }
+
+    // Also add colors from supplies (fallback/additional colors)
+    const supplies = getSupplies();
+    if (supplies && supplies.paintColors) {
+      supplies.paintColors.forEach((color: string) => {
+        allColors.add(color);
+
+        // Check if this color has a mixing recipe
+        const recipe = colorMixingRecipes[color];
+        if (recipe) {
+          // Extract base colors from the recipe text
+          // Recipe format: "Mix Color1 + Color2 + touch of Color3"
+          const recipeText = recipe.recipe;
+
+          // Check for each standard color in the recipe
+          standardColors.forEach(standardColor => {
+            if (recipeText.includes(standardColor)) {
+              allColors.add(standardColor);
+            }
+          });
+
+          // Also check for other named colors in the mixing recipes
+          Object.keys(colorMixingRecipes).forEach(mixableColor => {
+            if (recipeText.includes(mixableColor) && mixableColor !== color) {
+              allColors.add(mixableColor);
+            }
+          });
+        }
+      });
+    }
+
+    // If no colors found, return empty array
+    if (allColors.size === 0) return [];
 
     // Convert back to array and sort: standard colors first, then others
     const colorArray = Array.from(allColors);
@@ -342,6 +424,38 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
       recipe: 'Mix Ultramarine Blue + Ivory Black + tiny touch of Cadmium Red',
       description: 'A cool, neutral gray for shadows and overcast skies.'
     }
+  };
+
+  // Individual Amazon affiliate links for each primary color
+  const primaryColorAmazonLinks: { [key: string]: { url: string; label: string } } = {
+    'Titanium White': {
+      url: 'https://www.amazon.com/s?k=titanium+white+oil+paint&tag=brushatelier-20',
+      label: 'Buy Titanium White'
+    },
+    'Cadmium Red': {
+      url: 'https://www.amazon.com/s?k=cadmium+red+oil+paint&tag=brushatelier-20',
+      label: 'Buy Cadmium Red'
+    },
+    'Cadmium Yellow': {
+      url: 'https://www.amazon.com/s?k=cadmium+yellow+oil+paint&tag=brushatelier-20',
+      label: 'Buy Cadmium Yellow'
+    },
+    'Ultramarine Blue': {
+      url: 'https://www.amazon.com/s?k=ultramarine+blue+oil+paint&tag=brushatelier-20',
+      label: 'Buy Ultramarine Blue'
+    },
+    'Ivory Black': {
+      url: 'https://www.amazon.com/s?k=ivory+black+oil+paint&tag=brushatelier-20',
+      label: 'Buy Ivory Black'
+    }
+  };
+
+  // Get Amazon link for a specific primary color
+  const getPrimaryColorLink = (colorName: string) => {
+    const normalizedName = standardColors.find(std =>
+      colorName.toLowerCase().includes(std.toLowerCase())
+    );
+    return normalizedName ? primaryColorAmazonLinks[normalizedName] : null;
   };
 
   // Check if a color is standard/essential
@@ -496,9 +610,9 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   useEffect(() => {
     if (!coachingSessionId || !paintingGuide) return;
 
-    // Check if we already have all 5 milestone images
+    // Check if we already have all 3 milestone images
     const milestoneImages = paintingGuide.milestoneImages;
-    const hasAllMilestones = milestoneImages?.sketch && milestoneImages?.underpainting && milestoneImages?.midStage && milestoneImages?.advanced && milestoneImages?.nearComplete;
+    const hasAllMilestones = milestoneImages?.sketch && milestoneImages?.underpainting && milestoneImages?.nearComplete;
 
     if (hasAllMilestones) return; // All milestone images are loaded
 
@@ -516,10 +630,10 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
             console.log(`✅ Found new milestone images! Updating...`);
             setPaintingGuide(data.painting_guide);
 
-            // Stop polling if we have all 5 images
-            if (newMilestones.sketch && newMilestones.underpainting && newMilestones.midStage && newMilestones.advanced && newMilestones.nearComplete) {
+            // Stop polling if we have all 3 images
+            if (newMilestones.sketch && newMilestones.underpainting && newMilestones.nearComplete) {
               clearInterval(pollInterval);
-              console.log("🎉 All 5 milestone images loaded!");
+              console.log("🎉 All 3 milestone images loaded!");
             }
           }
         }
@@ -528,11 +642,11 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
       }
     }, 5000); // Poll every 5 seconds
 
-    // Stop polling after 10 minutes (5 images may take longer)
+    // Stop polling after 5 minutes (3 images should be faster)
     const timeout = setTimeout(() => {
       clearInterval(pollInterval);
       console.log("⏱️ Stopped polling for milestone images (timeout)");
-    }, 600000);
+    }, 300000);
 
     return () => {
       clearInterval(pollInterval);
@@ -717,6 +831,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         setEstimatedTime(data.estimatedTime);
         setSelectedMedium(data.medium);
         setArtworkStatus(data.artworkStatus);
+        setShowMaterialsOverview(true); // Show materials overview first before painting lesson
 
         // Use stored chat if available (most recent), otherwise use from database
         // Replace any old greetings that mention "Om" and filter out the image confirmation message
@@ -886,85 +1001,72 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const handleReferenceImageClick = async (imageName: string) => {
     console.log("=== LOADING REFERENCE IMAGE SESSION ===", imageName);
 
-    // Get the pre-generated lesson for this image
-    const lesson = REFERENCE_LESSONS[imageName];
-    if (!lesson) {
-      console.error("No lesson found for image:", imageName);
-      setError("This reference image is not available yet.");
-      return;
-    }
+    // Switch to the New Artwork tab to show the loading and results
+    onViewChange("new-artwork");
+
+    // Set the preview URL IMMEDIATELY so the UI switches from upload screen to analyzing screen
+    setPreviewUrl(`/${imageName}`);
 
     // Show loading state
     setIsAnalyzing(true);
     setError(null);
     setProgress(0);
 
-    // Simulate progress for better UX
+    // Progress for better UX
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 95) return prev;
-        const next = prev + Math.random() * 20;
-        return Math.min(next, 95); // Cap at 95% during loading
+        const next = prev + Math.random() * 15;
+        return Math.min(next, 95);
       });
-    }, 200);
+    }, 300);
 
     try {
-      // Simulate loading time
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the regenerate-reference-lessons API endpoint
+      // This endpoint doesn't require authentication and uses the public image path
+      console.log("📡 Calling API with:", { imageFile: imageName, medium: 'Acrylic', skillLevel: 'beginner' });
 
+      const apiResponse = await fetch('/api/regenerate-reference-lessons', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageFile: imageName,
+          medium: 'Acrylic',
+          skillLevel: 'beginner'
+        })
+      });
+
+      console.log("📡 API Response status:", apiResponse.status);
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json().catch(() => ({ error: 'Unknown error' }));
+        console.error("❌ API Error:", errorData);
+        throw new Error(errorData.error || 'Failed to generate lesson for reference image');
+      }
+
+      const result = await apiResponse.json();
+      console.log("✅ API Result received:", result);
+
+      clearInterval(progressInterval);
       setProgress(100);
 
-      // Set the preview URL to the reference image
-      setPreviewUrl(lesson.imageUrl);
-
-      // Set session state (no actual session ID since this is pre-generated)
-      setCoachingSessionId(null); // No DB session for reference images
+      // Set session state with the new session ID from API
+      setCoachingSessionId(result.session_id);
       setCurrentStep(0);
-      setTotalSteps(lesson.coachPlan.length);
-      setSelectedMedium(lesson.medium);
+      setTotalSteps(result.painting_guide?.steps?.length || 0);
+      setSelectedMedium('Acrylic');
 
-      // Parse the materials guide string into structured format
-      const materialsText = lesson.materialsGuide;
-
-      // Extract brushes (lines starting with "-" under "Brushes Needed:")
-      const brushMatches = materialsText.match(/\*\*Brushes Needed:\*\*\s*((?:- .+\n?)+)/);
-      const brushes = brushMatches
-        ? brushMatches[1].split('\n').filter(line => line.trim().startsWith('-')).map(line => line.replace(/^-\s*/, '').trim())
-        : [];
-
-      // Extract colors (lines starting with "-" under "Primary Colors:")
-      const colorMatches = materialsText.match(/\*\*Primary Colors:\*\*\s*((?:- .+\n?)+)/);
-      const paintColors = colorMatches
-        ? colorMatches[1].split('\n').filter(line => line.trim().startsWith('-')).map(line => line.replace(/^-\s*/, '').trim())
-        : [];
-
-      // Extract canvas info
-      const canvasMatches = materialsText.match(/\*\*Canvas:\*\*\s*(.+)/);
-      const canvas = canvasMatches ? canvasMatches[1].trim() : '';
-
-      // Create the painting guide structure expected by the UI
-      const paintingGuideData = {
-        coachPlan: lesson.coachPlan,
-        quickGuide: {
-          supplies: {
-            paintColors: paintColors,
-            brushes: brushes,
-            palette: ['Palette for mixing', 'Paper towels', 'Water cup'],
-            otherMaterials: canvas ? [canvas, 'Easel (optional)'] : []
-          },
-          steps: [],
-          productLinks: []
-        }
-      };
-
-      setPaintingGuide(paintingGuideData);
-      setEstimatedTime(lesson.estimatedTime);
-      setArtworkTitle(null);
+      // Use the new painting guide format from API
+      setPaintingGuide(result.painting_guide);
+      setEstimatedTime(result.estimated_time);
+      setArtworkTitle(result.artwork_title);
 
       setTimeout(() => {
         // Set first coaching message
         setChatMessages([
-          { role: 'bot', message: lesson.firstMessage }
+          { role: 'bot', message: result.message }
         ]);
         setIsAnalyzing(false);
         setShowMaterialsOverview(true);
@@ -972,14 +1074,43 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
         setArtworkStatus("in-progress");
       }, 300);
 
+      // Add reference image to portfolio with session info and painting guide
+      try {
+        const portfolioResponse = await fetch('/api/add-to-portfolio', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            imageUrl: `/${imageName}`,
+            title: result.artwork_title,
+            sessionId: result.session_id,
+            artworkStatus: 'in-progress',
+            paintingGuide: result.painting_guide
+          })
+        });
+
+        if (portfolioResponse.ok) {
+          const portfolioData = await portfolioResponse.json();
+          // Update the local session ID if it was converted to a real session
+          if (portfolioData.sessionId && portfolioData.sessionId !== result.session_id) {
+            setCoachingSessionId(portfolioData.sessionId);
+            console.log(`✅ Session converted to real ID: ${portfolioData.sessionId}`);
+          }
+          console.log("✅ Reference image added to portfolio with session info");
+        }
+      } catch (portfolioError) {
+        console.error("Failed to add to portfolio (non-fatal):", portfolioError);
+        // Don't block the user if portfolio add fails
+      }
+
       console.log("✅ Reference image loaded successfully");
-    } catch (error) {
+    } catch (error: any) {
       console.error("=== ERROR loading reference image ===", error);
-      setError(`Error: ${error instanceof Error ? error.message : "Something went wrong"}`);
+      clearInterval(progressInterval);
+      setError(`Failed to load reference image: ${error?.message || "Something went wrong"}`);
       setIsAnalyzing(false);
-      clearInterval(progressInterval);
-    } finally {
-      clearInterval(progressInterval);
+      setProgress(0);
     }
   };
 
@@ -1373,8 +1504,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                     </div>
                   </div>
 
-                {/* Our Recommendations Section */}
-                <div className="w-full max-w-4xl mx-auto mt-8">
+                  {/* Our Recommendations Section */}
+                  <div className="w-full max-w-4xl mx-auto mt-8">
                   <h3 className="text-xl font-bold text-[#1F2933] mb-4">Our Recommendations</h3>
                   <p className="text-sm text-[#1F2933]/70 mb-4">
                     Not sure what to paint? Try one of these curated reference images to get started.
@@ -1476,34 +1607,72 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                           </div>
                           </div>
 
-                          {/* Paint Colors - Show directly under reference image */}
+                          {/* Paint Colors - Two rows: Primary and Non-Primary */}
                           {!showMaterialsOverview && paintingGuide && getSupplies() && (
-                            <div className="px-2 mt-3">
-                              <div className="flex flex-wrap gap-2">
-                                {getAllRequiredColors().map((color: string, index: number) => (
-                                  <button
-                                    key={index}
-                                    onClick={() => {
-                                      setSelectedColorForMixing(color);
-                                      setShowColorMixModal(true);
-                                    }}
-                                    className="group relative"
-                                    title={`${color} - ${isStandardColor(color) ? 'Primary Color' : 'Click for mixing guide'}`}
-                                  >
-                                    <div
-                                      className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-blue-500 transition-all cursor-pointer hover:scale-110 shadow-sm"
-                                      style={{ backgroundColor: getColorHex(color) }}
-                                    />
-                                    {/* Tooltip on hover */}
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg min-w-max">
-                                      <div className="font-semibold text-center text-[10px]">{color}</div>
-                                      <div className="text-[9px] text-gray-300 text-center">
-                                        {isStandardColor(color) ? 'Primary' : 'Click for mixing'}
-                                      </div>
+                            <div className="px-2 mt-3 space-y-2">
+                              {/* Primary Colors Row */}
+                              {(() => {
+                                const primaryColors = getAllRequiredColors().filter((color: string) => isStandardColor(color));
+                                return primaryColors.length > 0 && (
+                                  <div>
+                                    <div className="text-[10px] font-semibold text-[#1F2933]/60 mb-1 px-1">Primary Colors</div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {primaryColors.map((color: string, index: number) => (
+                                        <button
+                                          key={index}
+                                          onClick={() => {
+                                            setSelectedColorForMixing(color);
+                                            setShowColorMixModal(true);
+                                          }}
+                                          className="group relative"
+                                          title={`${color} - Primary Color`}
+                                        >
+                                          <div
+                                            className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-blue-500 transition-all cursor-pointer hover:scale-110 shadow-sm"
+                                            style={{ backgroundColor: getColorHex(color) }}
+                                          />
+                                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg min-w-max">
+                                            <div className="font-semibold text-center text-[10px]">{color}</div>
+                                            <div className="text-[9px] text-gray-300 text-center">Primary Color</div>
+                                          </div>
+                                        </button>
+                                      ))}
                                     </div>
-                                  </button>
-                                ))}
-                              </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* Non-Primary Colors Row */}
+                              {(() => {
+                                const nonPrimaryColors = getAllRequiredColors().filter((color: string) => !isStandardColor(color));
+                                return nonPrimaryColors.length > 0 && (
+                                  <div>
+                                    <div className="text-[10px] font-semibold text-[#1F2933]/60 mb-1 px-1">Additional Colors</div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {nonPrimaryColors.map((color: string, index: number) => (
+                                        <button
+                                          key={index}
+                                          onClick={() => {
+                                            setSelectedColorForMixing(color);
+                                            setShowColorMixModal(true);
+                                          }}
+                                          className="group relative"
+                                          title={`${color} - Click for mixing guide`}
+                                        >
+                                          <div
+                                            className="w-8 h-8 rounded-full border-2 border-gray-300 hover:border-purple-500 transition-all cursor-pointer hover:scale-110 shadow-sm"
+                                            style={{ backgroundColor: getColorHex(color) }}
+                                          />
+                                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg min-w-max">
+                                            <div className="font-semibold text-center text-[10px]">{color}</div>
+                                            <div className="text-[9px] text-gray-300 text-center">Click for mixing</div>
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           )}
 
@@ -1614,13 +1783,27 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 <div className="bg-blue-50 border-l-4 border-blue-400 p-5 rounded-r-lg">
                                   <div className="flex items-start gap-4">
                                     <span className="text-3xl">🎨</span>
-                                    <div>
+                                    <div className="flex-1">
                                       <h4 className="font-bold text-gray-900 mb-2 text-lg">Essential Color</h4>
-                                      <p className="text-base text-gray-700 leading-relaxed">
+                                      <p className="text-base text-gray-700 leading-relaxed mb-4">
                                         This is a basic, essential color that you should have in your paint kit.
-                                        We recommend purchasing {selectedColorForMixing} from an art supply store as it's
+                                        We recommend purchasing {selectedColorForMixing} as it's
                                         a foundational color used in most paintings.
                                       </p>
+                                      {(() => {
+                                        const individualColorLink = getPrimaryColorLink(selectedColorForMixing);
+                                        return individualColorLink && (
+                                          <a
+                                            href={individualColorLink.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF9900] hover:bg-[#FF9900]/90 text-white rounded-lg transition-all text-sm font-semibold"
+                                          >
+                                            <img src="/amazon_icon.webp" alt="Amazon" className="w-5 h-5" />
+                                            {individualColorLink.label} on Amazon
+                                          </a>
+                                        );
+                                      })()}
                                     </div>
                                   </div>
                                 </div>
@@ -1634,14 +1817,28 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                               </div>
                             ) : (
                               <div className="space-y-5">
-                                <div className="bg-gray-50 border-l-4 border-gray-400 p-5 rounded-r-lg">
+                                <div className="bg-purple-50 border-l-4 border-purple-400 p-5 rounded-r-lg">
                                   <div className="flex items-start gap-4">
                                     <span className="text-3xl">🎨</span>
-                                    <div>
+                                    <div className="flex-1">
                                       <h4 className="font-bold text-gray-900 mb-3 text-lg">How to Mix This Color</h4>
-                                      <p className="text-base text-gray-700 leading-relaxed font-medium">
+                                      <p className="text-base text-gray-700 leading-relaxed font-medium mb-4">
                                         {getMixingRecipe(selectedColorForMixing).recipe}
                                       </p>
+                                      {(() => {
+                                        const nonPrimaryProductLink = getProductLinks()?.find((p: any) => p.category === 'paintColors' && !p.isPrimary);
+                                        return nonPrimaryProductLink && (
+                                          <a
+                                            href={nonPrimaryProductLink.amazonUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF9900] hover:bg-[#FF9900]/90 text-white rounded-lg transition-all text-sm font-semibold"
+                                          >
+                                            <img src="/amazon_icon.webp" alt="Amazon" className="w-5 h-5" />
+                                            Buy from Amazon
+                                          </a>
+                                        );
+                                      })()}
                                     </div>
                                   </div>
                                 </div>
@@ -1663,7 +1860,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 <div className="bg-blue-50 border border-blue-200 p-5 rounded-lg">
                                   <p className="text-sm text-gray-700">
                                     <strong>Prefer not to mix?</strong> You can also purchase {selectedColorForMixing} directly
-                                    from an art supply store if you'd rather have it ready-made. Many artists keep both
+                                    if you'd rather have it ready-made. Many artists keep both
                                     mixed and pre-made colors in their palette!
                                   </p>
                                 </div>
@@ -1990,16 +2187,25 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 </div>
                               </div>
 
-                              {/* Coaching Point */}
+                              {/* Coaching Point - Displayed as bullets */}
                               <div className="mb-4">
-                                <p className="text-base text-[#1F2933] leading-relaxed">
-                                  {paintingGuide.coachPlan[currentTipPage].coaching_point}
-                                </p>
+                                <ul className="space-y-2">
+                                  {paintingGuide.coachPlan[currentTipPage].coaching_point
+                                    .split(/(?<=[.!?])\s+/)
+                                    .filter((sentence: string) => sentence.trim().length > 0)
+                                    .map((sentence: string, idx: number) => (
+                                      <li key={idx} className="flex items-start gap-2 text-base text-[#1F2933] leading-relaxed">
+                                        <span className="text-[#2563EB] mt-1.5 flex-shrink-0">•</span>
+                                        <span>{sentence.trim()}</span>
+                                      </li>
+                                    ))
+                                  }
+                                </ul>
 
-                                {/* Recommended Brush - Inline */}
+                                {/* Recommended Tool - Inline */}
                                 {paintingGuide.coachPlan[currentTipPage].recommended_brush && (
                                   <p className="text-base text-[#1F2933] leading-relaxed mt-3">
-                                    <span className="font-semibold text-green-800">Recommended brush: </span>
+                                    <span className="font-semibold text-green-800">Recommended Tool: </span>
                                     {paintingGuide.coachPlan[currentTipPage].recommended_brush}
                                   </p>
                                 )}
@@ -2871,7 +3077,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
               </div>
             </div>
 
-            {/* Modal Content */}
+            {/* Modal Content - Only brushes and materials, NO colors */}
             <div className="p-8 space-y-5">
               {/* Brushes */}
               <div className="bg-amber-50 border-l-4 border-amber-400 p-5 rounded-r-lg">
@@ -2879,7 +3085,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                   <span className="text-3xl">🖌️</span>
                   <div className="flex-1">
                     <h4 className="font-bold text-gray-900 mb-3 text-lg">Brushes</h4>
-                    <ul className="space-y-2">
+                    <ul className="space-y-2 mb-4">
                       {getSupplies()!.brushes.map((brush: string, index: number) => (
                         <li key={index} className="flex items-start gap-2 text-base text-gray-700">
                           <span className="text-[#C2410C] mt-0.5">•</span>
@@ -2887,6 +3093,20 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         </li>
                       ))}
                     </ul>
+                    {(() => {
+                      const brushLink = getProductLinks()?.find((p: any) => p.category === 'brushes');
+                      return brushLink && (
+                        <a
+                          href={brushLink.amazonUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF9900] hover:bg-[#FF9900]/90 text-white rounded-lg transition-all text-sm font-semibold"
+                        >
+                          <img src="/amazon_icon.webp" alt="Amazon" className="w-5 h-5" />
+                          Buy on Amazon
+                        </a>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -2897,7 +3117,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                   <span className="text-3xl">✨</span>
                   <div className="flex-1">
                     <h4 className="font-bold text-gray-900 mb-3 text-lg">Other Materials</h4>
-                    <ul className="space-y-2">
+                    <ul className="space-y-2 mb-4">
                       {getSupplies()!.otherMaterials.map((material: string, index: number) => (
                         <li key={index} className="flex items-start gap-2 text-base text-gray-700">
                           <span className="text-gray-500 mt-0.5">•</span>
@@ -2905,8 +3125,32 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                         </li>
                       ))}
                     </ul>
+                    {(() => {
+                      const canvasLink = getProductLinks()?.find((p: any) => p.category === 'canvas');
+                      const paletteLink = getProductLinks()?.find((p: any) => p.category === 'palette');
+                      const otherLink = getProductLinks()?.find((p: any) => p.category === 'other');
+                      const materialLink = canvasLink || paletteLink || otherLink;
+                      return materialLink && (
+                        <a
+                          href={materialLink.amazonUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-[#FF9900] hover:bg-[#FF9900]/90 text-white rounded-lg transition-all text-sm font-semibold"
+                        >
+                          <img src="/amazon_icon.webp" alt="Amazon" className="w-5 h-5" />
+                          Buy on Amazon
+                        </a>
+                      );
+                    })()}
                   </div>
                 </div>
+              </div>
+
+              {/* Affiliate Disclosure */}
+              <div className="pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500 italic leading-relaxed">
+                  * Amazon links are affiliate links. Purchasing through them supports Brush Atelier at no extra cost to you. We only recommend quality art supplies.
+                </p>
               </div>
             </div>
           </div>

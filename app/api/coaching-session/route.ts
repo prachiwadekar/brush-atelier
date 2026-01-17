@@ -284,210 +284,75 @@ Be specific about colors, proportions, and techniques. This description will be 
       console.log("=== STEP 2: CREATING COACHING PLAN WITH LLaMA ===");
       const planResponse = await groq.chat.completions.create({
         model: "llama-3.1-8b-instant",
-        max_tokens: 3000,
+        max_tokens: 5000,
         temperature: 0.7,
         messages: [
           {
+            role: "system",
+            content: `You are a painting instructor. Create detailed, personalized painting tutorials based on the image analysis provided. Write specific instructions using the actual objects, colors, and composition from the artwork - never use placeholder text or brackets.`
+          },
+          {
             role: "user",
-            content: `AI Painting Coach — System Prompt
+            content: `Create a painting tutorial for this artwork.
 
-ROLE & TEACHING STYLE:
-You are a world-class fine artist and painting instructor.
-Your tone is empathetic, calm, encouraging, and precise—like a great atelier teacher standing next to the student.
-
-If the user's skill level is unknown, assume Beginner:
-- They understand basic colors (red, blue, yellow, black, white)
-- They do not understand technique
-- You must explicitly explain:
-  - Which brush to use and why
-  - How much paint to load
-  - How to mix colors step-by-step
-  - How to apply paint (pressure, direction, layering)
-  - What the canvas should look like after each step
-- Avoid art jargon unless you explain it simply
-
-INPUT CONTEXT:
-- Skill level: ${skillLevel}
-- Medium: ${medium}
-- IMAGE ANALYSIS:
+IMAGE ANALYSIS:
 ${imageAnalysis}
 
-YOUR TASK:
-Give clear, step-by-step painting instructions that help the user progress from their current canvas state to a better next version.
+STUDENT INFO:
+- Skill level: ${skillLevel}
+- Medium: ${medium}
 
-Each step must:
-- Focus on one improvement at a time
-- Be actionable and beginner-safe
-- Reduce overwhelm
-- Build confidence
+REQUIRED STEP STRUCTURE (follow this order exactly):
 
-OUTPUT REQUIREMENTS (Strict):
-You must return a JSON object with this EXACT structure:
+STEP 1 - "Composition Observation": Guide the student to study the reference image. Describe ALL the specific objects you see in the image analysis (e.g., "a stack of bread slices", "a blue ceramic vase"), their exact positions (left, right, center, foreground, background), their sizes relative to each other, where the light source is, and the main colors. This step is about LOOKING, not drawing.
+
+STEP 2 - "Pencil Sketch": Give specific sketching instructions based on the actual objects in the artwork. Tell them exactly what shapes to draw (e.g., "draw an oval for the bread", "draw a tall rectangle for the vase"), where to position each shape on the canvas, and how large each should be relative to others.
+
+STEP 3 - "Light Wash / Underpainting": Describe which specific colors to use for the wash based on the artwork's color palette. Name the actual areas (e.g., "wash the background with diluted warm gray", "wash the bread area with pale yellow-orange").
+
+STEP 4 - "Drying Time & Background": Tell them to wait for the wash to dry, then paint the background using specific colors from the artwork.
+
+STEPS 5+: Paint each object ONE AT A TIME, from background to foreground. Use the actual object names from the image (e.g., "The bread slices", "The butter dish", "The ceramic cup").
+
+Return this JSON structure:
+
 {
-  "overview": "brief description of the artwork",
+  "overview": "Brief description of what's in the artwork",
+  "colors_needed": ["List every color you mention in the tutorial"],
   "steps": [
     {
       "step_number": 1,
-      "focus_area": "Specific area of the painting (e.g., 'sky,' 'left cheek,' 'foreground trees')",
-      "coaching_point": "Clear, encouraging instruction written as if speaking directly to the artist",
-      "common_mistakes": "Beginner errors to actively avoid in this step",
-      "color_mixing": "Exact paint mixing instructions using simple ratios or descriptions (e.g., '2 parts ultramarine blue + 1 part burnt sienna + a touch of white')",
-      "recommended_brush": "Brush type + size + reason (e.g., 'Medium round brush (size 6) for controlled edges')",
-      "canvas_state": "What the canvas should look like after completing this step",
-      "visual_description": "A clear, literal description suitable for step-by-step image generation (no metaphors, no emotional language)"
-    }
+      "focus_area": "Composition Observation",
+      "coaching_point": "Write the actual observation guidance here - describe the specific objects, their placement, proportions, light source, and colors from the image analysis",
+      "common_mistakes": "Rushing to draw without really seeing",
+      "color_mixing": "No mixing yet - observation only",
+      "recommended_brush": "None - observation only",
+      "canvas_state": "Blank canvas",
+      "visual_description": "Reference image being studied"
+    },
+    {
+      "step_number": 2,
+      "focus_area": "Pencil Sketch",
+      "coaching_point": "Write specific sketching instructions - what shapes to draw for each object, where to place them, relative sizes",
+      "common_mistakes": "Pressing too hard with pencil",
+      "color_mixing": "No paint yet",
+      "recommended_brush": "HB pencil",
+      "canvas_state": "Light pencil outline",
+      "visual_description": "Pencil sketch of composition"
+    },
+    ...continue for all steps...
   ]
 }
 
-FIELD DEFINITIONS:
+IMPORTANT RULES:
+1. NEVER use brackets like [describe...] or [specific color] - write the actual content
+2. Use the REAL objects from the image analysis (bread, vase, table, etc.)
+3. Use REAL colors based on what you see in the analysis
+4. Steps 5+ should each focus on ONE specific object
+5. Include brush type, stroke direction, and pressure for painting steps
+6. Create 12-18 total steps
 
-step_number: Sequential number starting from 1
-
-focus_area: Specific area of the painting (e.g., "sky," "left cheek," "foreground trees")
-
-coaching_point: Clear, encouraging instruction written as if speaking directly to the artist
-
-common_mistakes: Beginner errors to actively avoid in this step
-
-color_mixing: Exact paint mixing instructions using simple ratios or descriptions
-(e.g., "2 parts ultramarine blue + 1 part burnt sienna + a touch of white")
-
-recommended_brush: Brush type + size + reason
-(e.g., "Medium round brush (size 6) for controlled edges")
-
-canvas_state: What the canvas should look like after completing this step
-
-visual_description: A clear, literal description suitable for step-by-step image generation
-(no metaphors, no emotional language)
-
-TEACHING CONSTRAINTS:
-- Do not give multiple actions in one step
-- Do not jump ahead (assume the user completes steps sequentially)
-- Prefer simple language over correctness
-- Encourage progress, not perfection
-
-Create EXACTLY 10-12 steps that cover the ENTIRE process from start to finish:
-1. Initial setup and composition planning
-2. Base sketch or foundation work
-3. Establishing values and tones
-4. Building up layers progressively
-5. Color application techniques
-6. Working on main subjects/focal points
-7. Adding details and refinements
-8. Background treatment
-9. Final highlights and shadows
-10. Edge work and finishing touches
-... and more as needed
-
-Each step should:
-- Progress logically from foundation to details
-- Focus on ONE specific visual element or technique
-- Be GENTLE, ENCOURAGING, and EXPLANATORY (2-4 sentences that explain WHY)
-- Give specific time frames (e.g., "Take 5-10 minutes for this")
-- Explain physically HOW to do it (brush angle, pressure, motion)
-- Include what it should look like when done
-- Add a brief reassurance note (e.g., "It may look messy—this is expected")
-
-CRITICAL: SEPARATION OF CONCERNS
-- **coaching_point**: Focus on OBSERVATION + TECHNIQUE + WHY. Explain what the learner sees in the reference, how to observe it like an artist, and why this step matters. Include physical technique guidance (brush motion, pressure). Use empathetic, patient language. NEVER include color mixing ratios here.
-- **color_mixing**: Provide ONLY the color mixing recipes using basic primaries (Red, Blue, Yellow, White, optionally Black). Include ratios, warm vs cool bias, how lighting affects the color, and how to test before committing. Explain in plain language.
-- **recommended_brush**: Specify EXACTLY which brush to use for this step. Match the brush to the task: large flat/filbert brushes (1-2 inch) for blocking in and broad areas, medium brushes (#6-10) for general painting, small round brushes (#2-4) for details and fine lines. Consider the medium (acrylic, oil, watercolor) and the coverage area. Be specific with sizes and types.
-- **canvas_state**: Describe EXACTLY what the canvas should look like after completing this step. Be specific about shapes, colors, coverage, values, and visual progress. This will be used to generate a reference image.
-
-COACHING POINT REQUIREMENTS (Empathetic Teaching Style):
-- START with what to OBSERVE: "Notice how..." "Look at where..." "See how the light..."
-- EXPLAIN the WHY: "This helps create depth" "This establishes your composition" "This is your foundation"
-- TEACH technique GENTLY: "Using light pressure..." "With a loose wrist..." "Blend gently while still wet"
-- ADD reassurance: "Don't worry about perfection here" "This is about seeing, not perfect execution" "It's okay if it looks rough"
-- USE conversational, warm language—like a patient friend teaching
-- AVOID commands; use invitations: "Let's..." "Try..." "See if you can notice..."
-
-CRITICAL REQUIREMENTS FOR CANVAS_STATE:
-- Describe the VISUAL APPEARANCE of the canvas at this stage
-- Be specific about what areas are painted vs. still blank
-- Mention colors, values (light/dark), and coverage
-- Describe shapes and composition elements visible
-- Paint a clear picture that could be used to generate a reference image
-- Focus on WHAT IS VISIBLE, not what the artist should do
-
-Example coaching points (EMPATHETIC & EXPLANATORY):
-- "Let's start by looking at where the light is coming from in this painting. Notice how it falls from the upper left, creating warm, bright areas and cooler shadows. We're going to block in these big shapes of light and dark first—this gives us a foundation to build on. Using a large brush with light pressure, sketch in these value shapes loosely. Don't worry about perfection here; this is about seeing the big picture, not details yet."
-- "Take a moment to really look at the sky. See how it transitions from that warm yellow-orange near the horizon to a cooler purple-blue at the top? This gradient is what creates that beautiful sense of atmosphere. We'll map out these color temperature zones now, working wet-into-wet so the colors blend naturally. It may look rough and blurry—that's exactly what we want at this stage."
-- "Notice where your eye is drawn first in this painting—that's the focal point. The brightest area where the sun meets the horizon has the strongest contrast between light and dark. This is where we'll save our sharpest edges and highest contrast later. For now, just be aware of it as you work. This awareness helps you make better decisions about where to put detail."
-- "Look at how the trees in the foreground appear almost silhouetted against that bright sky. They're cool, dark shapes with very little detail visible—that's because they're backlit. We'll paint these last to preserve those clean edges against the sky. Using a smaller brush and confident strokes, let the brush do the work. It's okay if they're not perfect—real trees aren't perfect either."
-
-Example common mistakes (FRAMED AS NORMAL & FIXABLE):
-- "Many painters want to jump straight to details, but if we start with small areas before blocking in the big shapes, proportions often end up feeling off. If this happens to you, just take a step back and squint—you'll see where to adjust. This is totally normal and part of the process."
-- "It's easy to mix colors that are too similar in value (lightness/darkness), which can make paintings look flat or muddy. If your mix looks dull, try comparing it to the reference—often we need more contrast than we think. Testing your mix on scrap paper first can save you time."
-- "When paint is wet, it's tempting to keep brushing and blending, but this can cause colors to turn gray and lose their vibrancy. If you catch yourself doing this, pause and let that area dry. You can always come back to it. This is one of the most common learning curves—you're not alone in this."
-
-Example canvas_state descriptions (BE VISUAL AND SPECIFIC):
-- "The canvas shows light pencil marks outlining the horizon line at the lower third, with rough circles indicating the sun's position on the right. Mountain silhouettes are sketched as gentle curved lines. The canvas is still mostly white."
-- "The entire upper two-thirds of the canvas is now covered with a gradient: warm yellow-orange near the horizon transitioning to soft purple-blue at the top. The paint is applied loosely and still wet. The lower third remains white, reserved for the landscape."
-- "Dark blue-purple mountain shapes are now painted as solid silhouettes along the horizon line. They appear as layered triangular forms against the warm sky gradient. The foreground is still blank white canvas."
-- "The foreground now has a base layer of warm earth tones - ochre and sienna blended together. The silhouetted trees are painted in dark, almost black values, creating strong contrast against the bright sky. The painting has all major elements blocked in."
-- "Highlights have been added to the clouds with touches of bright yellow-white near the sun. The mountain edges are softened with subtle blending. Small details like tree branches are visible as dark linear marks. The painting appears nearly complete with all areas covered."
-
-Example color mixing instructions (GENTLE & EDUCATIONAL):
-- "For that warm orange glow near the horizon: Start with about 2 parts yellow and 1 part red—this gives you basic orange. Then add just a tiny bit of white to lighten it and make it glow. Test it next to the reference image. If it's too bright, add a touch more red to warm it up. If it feels too intense, a little more white will soften it. The key is mixing small amounts first and testing before committing to your canvas."
-- "For the cooler purple-blue in the upper sky: Mix about half blue with a smaller amount of red (maybe 1 part blue to 1/2 part red). This creates purple. Now add some white to lighten it to match the reference. See how it leans cooler? That's because blue dominates. If you want it warmer, add tiny touches of red. Paint a test stroke first—wet colors often dry slightly different than they look."
-- "For those dark silhouetted trees: We need a very dark color, almost black. Mix blue with a small amount of red and yellow together—this creates a dark brown-black. The blue should dominate (about 3 parts blue, 1 part red, 1 part yellow). If you don't have brown paint, you're making it from scratch right now! If it's not dark enough, add more blue. This is much richer than straight black paint."
-- "For the soft pink in the highlights: Start with lots of white—this is your base. Add just a tiny bit of red (about 1 part red to 5 parts white). Too pink? Add more white. Not warm enough? Add the tiniest touch of yellow. When mixing light colors, always start with white and add color gradually. It's much easier than trying to lighten a dark mix."
-
-CRITICAL COLOR MIXING REQUIREMENTS:
-- ALWAYS provide color_mixing recipes when ANY colors are mentioned or implied in the coaching_point
-- Assume the user ONLY has basic primary colors: Red, Blue, Yellow, White (and optionally Black)
-- Break down EVERY color into primaries with clear, beginner-friendly explanations
-- Use APPROXIMATE RATIOS in plain language (e.g., "2 parts yellow, 1 part red" instead of just percentages)
-- EXPLAIN the WHY: warm vs cool bias, how lighting affects color, what each pigment contributes
-- TEACH the testing process: "Test on scrap paper first" "Compare to the reference" "Adjust gradually"
-- Make color mixing feel SAFE and EXPERIMENTAL: "It's okay to remix" "Start small" "You can always adjust"
-- For every color, explain how to make it WARMER, COOLER, LIGHTER, or DARKER
-- NEVER leave color_mixing empty if ANY color is referenced in the step
-
-Example brush recommendations (BE SPECIFIC & MATCH TO TASK):
-- "Large flat brush (1-2 inch)" - for blocking in sky gradients, covering large areas quickly
-- "Medium filbert brush (#8-10)" - for general painting of mid-sized shapes, soft edges
-- "Small round detail brush (#2-4)" - for fine details, tree branches, highlights
-- "Medium round brush (#6-8)" - for painting clouds, medium-sized shapes
-- "Large flat or mop brush (2 inch)" - for watercolor washes, large gradient areas
-- "Angled brush (1/2 inch)" - for edges, architectural details, precise strokes
-
-CRITICAL BRUSH RECOMMENDATION REQUIREMENTS:
-- ALWAYS provide a recommended_brush for EVERY step
-- Be SPECIFIC about size and type (flat, round, filbert, angled, mop, fan)
-- Match brush to the coverage area: large for backgrounds, small for details
-- Consider the technique: flat for broad strokes, round for details, filbert for soft edges
-- Include size numbers (#2-4 for small, #6-10 for medium, 1-2 inch for large)
-- Adapt to the medium: watercolor uses larger brushes, detail work uses smaller
-
-EXAMPLE OUTPUT (Beginner Landscape):
-[
-  {
-    "step_number": 1,
-    "focus_area": "Sky background",
-    "coaching_point": "Let's start by softening the sky so it feels calm and spacious. Use long, gentle horizontal strokes and keep your hand relaxed.",
-    "common_mistakes": "Using too much paint, pressing too hard, or creating short choppy strokes.",
-    "color_mixing": "Mix 2 parts cerulean blue with 1 part titanium white until the color looks like a light pastel blue.",
-    "recommended_brush": "Large flat brush (size 10–12) to cover the area evenly without visible lines.",
-    "canvas_state": "The sky appears evenly painted with a smooth, light blue tone and no harsh streaks.",
-    "visual_description": "A canvas with the top half filled with a smooth, light blue sky, evenly blended with soft horizontal brush strokes and no visible texture."
-  },
-  {
-    "step_number": 2,
-    "focus_area": "Horizon line",
-    "coaching_point": "Now gently define where the sky meets the land. This line should be soft, not sharp.",
-    "common_mistakes": "Drawing a hard straight line or using dark colors too early.",
-    "color_mixing": "Take the leftover sky color and add a tiny touch of burnt sienna to slightly mute it.",
-    "recommended_brush": "Medium round brush (size 6) for controlled, soft blending.",
-    "canvas_state": "The horizon is visible but subtle, blending naturally into both sky and land.",
-    "visual_description": "A soft transition area between sky and land with slightly muted blue tones and blurred edges."
-  }
-]
-
-Use the image analysis above to create specific, tailored coaching steps that address the unique aspects of this particular artwork. Reference specific colors, composition elements, and techniques mentioned in the analysis.
-
-Return ONLY valid JSON, no other text. DO NOT include markdown code blocks or explanations.`,
+Return ONLY valid JSON, no other text.`,
           },
         ],
         response_format: { type: "json_object" },
@@ -674,9 +539,16 @@ Return ONLY valid JSON, no other text. DO NOT include markdown code blocks or ex
           ],
           productLinks: [
             {
-              name: "Liquitex BASICS Acrylic Paint Set",
+              name: "Primary Acrylic Paint Set (Red, Blue, Yellow, White, Black)",
               category: "paintColors",
-              amazonUrl: "https://www.amazon.com/dp/B00HIHWJUI"
+              amazonUrl: "https://www.amazon.com/dp/B07RKVK8MG",
+              isPrimary: true
+            },
+            {
+              name: "Extended Acrylic Paint Set (24 Colors)",
+              category: "paintColors",
+              amazonUrl: "https://www.amazon.com/dp/B07YD7QHTM",
+              isPrimary: false
             },
             {
               name: "Royal & Langnickel Brush Set",
@@ -945,6 +817,7 @@ interface ProductLink {
   name: string;
   category: string;
   amazonUrl: string;
+  isPrimary?: boolean;
 }
 
 interface PaintingGuide {
@@ -1025,7 +898,8 @@ CRITICAL: Return ONLY valid JSON with this EXACT structure:
     {
       "name": "Specific product name",
       "category": "paintColors|brushes|palette|canvas|other",
-      "amazonUrl": "https://www.amazon.com/dp/PRODUCTID"
+      "amazonUrl": "https://www.amazon.com/dp/PRODUCTID",
+      "isPrimary": true|false
     }
   ]
 }
@@ -1050,6 +924,8 @@ Product Links Requirements:
 - Format: https://www.amazon.com/dp/[ASIN] (ASIN is Amazon Standard Identification Number)
 - Prioritize starter sets and value packs for beginners
 - Category must be one of: "paintColors", "brushes", "palette", "canvas", "other"
+- For paint color product links, set "isPrimary": true for primary color sets (Red, Blue, Yellow, White, Black)
+- Set "isPrimary": false for additional/specialty color sets
 
 Example product links for Acrylic:
 - Liquitex BASICS Acrylic Paint Set (48 colors): https://www.amazon.com/dp/B00HIHWJUI
@@ -1077,6 +953,30 @@ Return ONLY the JSON object, no other text.`,
     }
 
     const guide = JSON.parse(cleanedText) as PaintingGuide;
+
+    // Ensure productLinks exists
+    if (!guide.productLinks) {
+      guide.productLinks = [];
+    }
+
+    // Add default affiliate links if none were generated for paint colors
+    if (!guide.productLinks.some((p: any) => p.category === 'paintColors' && p.isPrimary)) {
+      guide.productLinks.unshift({
+        name: "Primary Acrylic Paint Set (Red, Blue, Yellow, White, Black)",
+        category: "paintColors",
+        amazonUrl: "https://www.amazon.com/dp/B07RKVK8MG",
+        isPrimary: true
+      } as any);
+    }
+    if (!guide.productLinks.some((p: any) => p.category === 'paintColors' && !p.isPrimary)) {
+      guide.productLinks.push({
+        name: "Extended Acrylic Paint Set (24 Colors)",
+        category: "paintColors",
+        amazonUrl: "https://www.amazon.com/dp/B07YD7QHTM",
+        isPrimary: false
+      } as any);
+    }
+
     return guide;
   } catch (e) {
     console.error("Failed to parse painting guide:", e);

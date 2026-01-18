@@ -74,19 +74,20 @@ This is for teaching beginners how to start a ${medium} painting by sketching fi
       }
     }
 
-    // Milestone 2: Underpainting/Base colors
-    console.log("🎨 Generating milestone 2: Underpainting...");
-    const underpaintingPrompt = `Create an image showing this ${medium} painting at the underpainting stage.
+    // Milestone 2: Very early wash stage - just starting to add color
+    console.log("🎨 Generating milestone 2: Light wash...");
+    const underpaintingPrompt = `Create an image showing this ${medium} painting at a VERY EARLY stage - just the initial light wash.
 Requirements:
-- Light pencil sketch still visible underneath
-- Block in basic color shapes with thin, transparent washes
-- Focus on getting the overall color composition right, not details
-- Colors should be lighter and less saturated than final
-- Large, loose brush strokes covering main areas
-- No details yet - just establishing the color foundation
-- Realistic ${medium} paint texture with visible brush marks
+- Pencil sketch clearly visible underneath the wash
+- Only the most basic, diluted washes of color applied
+- About 20-25% complete - barely any paint on canvas
+- Very thin, transparent color covering maybe half the canvas
+- Large areas of white canvas/paper still showing through
+- No detail work at all - just the lightest color tones
+- Focus on one or two main color areas being blocked in loosely
+- Looks like the painter just started adding the first touches of color
 
-This shows the initial color blocking stage where we establish the overall palette.`;
+This is the very beginning of the painting process - mostly sketch with hints of color.`;
 
     const underpaintingResult = await model.generateContent([
       underpaintingPrompt,
@@ -107,19 +108,22 @@ This shows the initial color blocking stage where we establish the overall palet
       }
     }
 
-    // Milestone 3: Final painting (95% complete, before final touches)
-    console.log("🎨 Generating milestone 3: Near completion...");
-    const finalPrompt = `Create an image showing this ${medium} painting essentially complete, about 95% done.
-Requirements:
-- The painting looks finished with all major elements complete
-- Proper colors, values, and details throughout
-- Shows professional ${medium} paint application
-- May be missing only the tiniest final highlights or edge refinements
-- Realistic paint texture and technique
-- Composition is fully resolved
-- All details are in place
+    // Milestone 3: Early-mid stage painting (35-45% complete) - clearly unfinished
+    console.log("🎨 Generating milestone 3: Early-mid stage...");
+    const finalPrompt = `Create an image showing this ${medium} painting at an EARLY-MID STAGE - only about 35-40% complete. It must look OBVIOUSLY UNFINISHED.
 
-This shows what the painting looks like just before final touches and highlights are added.`;
+CRITICAL - This painting should look INCOMPLETE:
+- Background has rough color blocking but is NOT refined - visible brush strokes and uneven coverage
+- Only 1-2 objects have started to take shape, others are just rough color shapes
+- Large areas still have thin, patchy paint coverage
+- MANY areas show the white canvas/paper peeking through
+- Colors are muted and flat - no depth, no shadows properly rendered yet
+- Edges are soft and undefined - nothing has crisp outlines
+- NO details whatsoever - no textures, no highlights, no reflections
+- Looks like the painter stopped halfway through blocking in colors
+- Should be CLEARLY different from the finished reference - much rougher and less complete
+
+DO NOT make it look close to finished. This should look like someone put down their brush after 30-40 minutes of a multi-hour painting session.`;
 
     const finalResult = await model.generateContent([
       finalPrompt,
@@ -564,30 +568,11 @@ Return ONLY valid JSON, no other text.`,
         };
       }
 
-      // Generate 3 milestone images synchronously (user waits for images before seeing lesson)
-      if (enableImageGeneration) {
-        console.log("🚀 Starting 3 milestone image generation with Gemini...");
-        try {
-          await generate3MilestoneImages(
-            sessionId,
-            base64,
-            mimeType,
-            medium
-          );
-          console.log("✅ All 3 milestone images generated successfully");
-        } catch (error: unknown) {
-          console.error("❌ Milestone image generation failed:", error);
-          // Continue even if image generation fails
-        }
-      }
+      // Milestone images are now generated on-demand when user clicks "Visual Progress Guide"
+      // This saves API costs by only generating images when actually needed
+      // See /api/coaching-session/milestones endpoint for on-demand generation
 
-      // Fetch the updated session with milestone images
-      const updatedSession = await prisma.coachingSession.findUnique({
-        where: { sessionId },
-        select: { paintingGuide: true },
-      });
-
-      const finalGuide = updatedSession ? JSON.parse(updatedSession.paintingGuide) : completeGuide;
+      const finalGuide = completeGuide;
 
       return NextResponse.json({
         session_id: sessionId,

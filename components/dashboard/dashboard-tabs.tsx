@@ -296,8 +296,13 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
   const [isDragging, setIsDragging] = useState(false);
   const [artworkTitle, setArtworkTitle] = useState<string | null>(null);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const [progressImages, setProgressImages] = useState<string[]>([]);
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [isLoadingMilestones, setIsLoadingMilestones] = useState(false);
+  const [showVisualProgressGuide, setShowVisualProgressGuide] = useState(true);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const progressFileInputRef = useRef<HTMLInputElement>(null);
   // const tipChatEndRef = useRef<HTMLDivElement>(null); // Removed - will be added back with chatbot later
   const fileInputRef = useRef<HTMLInputElement>(null);
   const critiqueFileInputRef = useRef<HTMLInputElement>(null);
@@ -737,6 +742,58 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     } catch (error) {
       console.error("Error adding to portfolio:", error);
       alert("Failed to add to portfolio");
+    }
+  };
+
+  // Handle progress image upload
+  const handleProgressImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageDataUrl = event.target?.result as string;
+      setProgressImages(prev => [...prev, imageDataUrl]);
+      setShowProgressModal(true);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset the input so the same file can be selected again
+    e.target.value = '';
+  };
+
+  const handleDeleteProgressImage = (index: number) => {
+    setProgressImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Generate milestone images on-demand
+  const handleGenerateMilestones = async () => {
+    if (!coachingSessionId || isLoadingMilestones) return;
+
+    setIsLoadingMilestones(true);
+    try {
+      const response = await fetch('/api/coaching-session/milestones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: coachingSessionId })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update the painting guide with the new milestone images
+        if (data.milestoneImages && paintingGuide) {
+          setPaintingGuide({
+            ...paintingGuide,
+            milestoneImages: data.milestoneImages
+          });
+        }
+      } else {
+        console.error('Failed to generate milestone images');
+      }
+    } catch (error) {
+      console.error('Error generating milestones:', error);
+    } finally {
+      setIsLoadingMilestones(false);
     }
   };
 
@@ -1257,6 +1314,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
     setCurrentTipPage(0); // Reset guidance pagination
     setArtworkTitle(null); // Clear artwork title
     setShowMaterialsOverview(false); // Reset materials overview
+    setProgressImages([]); // Clear progress photos for new session
+    setShowProgressModal(false);
 
     // Switch to Art Coaching view
     onViewChange("new-artwork");
@@ -2187,37 +2246,96 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 </div>
                               </div>
 
+                              {/* Caution - Above coaching instructions (only show if unique from previous steps) */}
+                              {(() => {
+                                const currentCaution = paintingGuide.coachPlan[currentTipPage].common_mistakes;
+                                if (!currentCaution) return null;
+
+                                // Check if this caution appeared in any previous step
+                                const previousCautions = paintingGuide.coachPlan
+                                  .slice(0, currentTipPage)
+                                  .map((step: { common_mistakes?: string }) => step.common_mistakes?.toLowerCase().trim());
+                                const isDuplicate = previousCautions.includes(currentCaution.toLowerCase().trim());
+
+                                if (isDuplicate) return null;
+
+                                return (
+                                  <div className="mb-4">
+                                    <div className="p-3 bg-red-50 border-l-4 border-red-400 rounded-r-lg flex items-start gap-2">
+                                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-red-900 flex-shrink-0 mt-0.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                      </svg>
+                                      <p className="text-sm text-red-800 leading-relaxed">
+                                        <span className="font-bold text-red-900">Caution: </span>
+                                        {currentCaution}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
                               {/* Coaching Point - Displayed as bullets */}
                               <div className="mb-4">
-                                <ul className="space-y-2">
+                                <ul className="space-y-1">
                                   {paintingGuide.coachPlan[currentTipPage].coaching_point
                                     .split(/(?<=[.!?])\s+/)
                                     .filter((sentence: string) => sentence.trim().length > 0)
                                     .map((sentence: string, idx: number) => (
-                                      <li key={idx} className="flex items-start gap-2 text-base text-[#1F2933] leading-relaxed">
-                                        <span className="text-[#2563EB] mt-1.5 flex-shrink-0">•</span>
+                                      <li key={idx} className="flex items-start gap-1.5 text-base text-[#1F2933] leading-snug">
+                                        <span className="text-[#2563EB] mt-0.5 flex-shrink-0">•</span>
                                         <span>{sentence.trim()}</span>
                                       </li>
                                     ))
                                   }
                                 </ul>
 
-                                {/* Recommended Tool - Inline */}
-                                {paintingGuide.coachPlan[currentTipPage].recommended_brush && (
-                                  <p className="text-base text-[#1F2933] leading-relaxed mt-3">
-                                    <span className="font-semibold text-green-800">Recommended Tool: </span>
-                                    {paintingGuide.coachPlan[currentTipPage].recommended_brush}
-                                  </p>
-                                )}
+                                {/* Recommended Tool and Save Progress - Same row */}
+                                <div className="flex items-center justify-between mt-3">
+                                  {paintingGuide.coachPlan[currentTipPage].recommended_brush && (
+                                    <p className="text-base text-[#1F2933] leading-relaxed">
+                                      <span className="font-semibold text-green-800">Recommended Tool: </span>
+                                      {paintingGuide.coachPlan[currentTipPage].recommended_brush}
+                                    </p>
+                                  )}
+
+                                  {/* Save / Show Progress Button */}
+                                  <button
+                                    onClick={() => progressImages.length > 0 ? setShowProgressModal(true) : progressFileInputRef.current?.click()}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#1D4ED8] bg-[#DBEAFE] hover:bg-[#BFDBFE] rounded-lg transition-colors"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                                    </svg>
+                                    {progressImages.length > 0 ? `My Progress (${progressImages.length})` : 'Save My Progress'}
+                                  </button>
+                                  <input
+                                    type="file"
+                                    ref={progressFileInputRef}
+                                    onChange={handleProgressImageUpload}
+                                    accept="image/*"
+                                    className="hidden"
+                                  />
+                                </div>
                               </div>
 
                               {/* Milestone Images - Visual Progress Guide */}
-                              {paintingGuide.milestoneImages && (
-                                <div className="mb-6">
-                                  <h4 className="text-sm font-bold text-[#1F2933] mb-3">Visual Progress Guide</h4>
-                                  <div className="grid grid-cols-3 gap-3">
-                                    {paintingGuide.milestoneImages.sketch && (
-                                      <div className="flex flex-col">
+                              <div className="mb-6">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h4 className="text-sm font-bold text-[#1F2933]">Visual Progress Guide</h4>
+                                  {paintingGuide.milestoneImages?.sketch && (
+                                    <button
+                                      onClick={() => setShowVisualProgressGuide(!showVisualProgressGuide)}
+                                      className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                                    >
+                                      {showVisualProgressGuide ? 'Hide' : 'Show'}
+                                    </button>
+                                  )}
+                                </div>
+                                {paintingGuide.milestoneImages?.sketch ? (
+                                  showVisualProgressGuide && (
+                                    <div className="grid grid-cols-3 gap-3">
+                                      {paintingGuide.milestoneImages.sketch && (
                                         <div
                                           className="bg-gray-100 border-2 border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group"
                                           onClick={() => {
@@ -2227,7 +2345,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                         >
                                           <img
                                             src={paintingGuide.milestoneImages.sketch}
-                                            alt="Step 1: Sketch"
+                                            alt="Sketch"
                                             className="w-full h-auto object-cover"
                                           />
                                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
@@ -2236,11 +2354,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                             </svg>
                                           </div>
                                         </div>
-                                        <p className="text-xs text-gray-600 mt-1 text-center">1. Sketch</p>
-                                      </div>
-                                    )}
-                                    {paintingGuide.milestoneImages.underpainting && (
-                                      <div className="flex flex-col">
+                                      )}
+                                      {paintingGuide.milestoneImages.underpainting && (
                                         <div
                                           className="bg-gray-100 border-2 border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group"
                                           onClick={() => {
@@ -2250,7 +2365,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                         >
                                           <img
                                             src={paintingGuide.milestoneImages.underpainting}
-                                            alt="Step 2: Underpainting"
+                                            alt="Wash"
                                             className="w-full h-auto object-cover"
                                           />
                                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
@@ -2259,11 +2374,8 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                             </svg>
                                           </div>
                                         </div>
-                                        <p className="text-xs text-gray-600 mt-1 text-center">2. Base</p>
-                                      </div>
-                                    )}
-                                    {paintingGuide.milestoneImages.nearComplete && (
-                                      <div className="flex flex-col">
+                                      )}
+                                      {paintingGuide.milestoneImages.nearComplete && (
                                         <div
                                           className="bg-gray-100 border-2 border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group"
                                           onClick={() => {
@@ -2273,7 +2385,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                         >
                                           <img
                                             src={paintingGuide.milestoneImages.nearComplete}
-                                            alt="Step 3: Nearly Complete"
+                                            alt="Mid-Stage"
                                             className="w-full h-auto object-cover"
                                           />
                                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
@@ -2282,33 +2394,35 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                             </svg>
                                           </div>
                                         </div>
-                                        <p className="text-xs text-gray-600 mt-1 text-center">3. Final</p>
-                                      </div>
+                                      )}
+                                    </div>
+                                  )
+                                ) : (
+                                  <button
+                                    onClick={handleGenerateMilestones}
+                                    disabled={isLoadingMilestones}
+                                    className="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#2563EB] hover:bg-[#2563EB]/5 transition-colors flex flex-col items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {isLoadingMilestones ? (
+                                      <>
+                                        <svg className="animate-spin h-6 w-6 text-[#2563EB]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span className="text-sm text-[#1F2933]/70">Generating progress images...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-gray-400">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                        </svg>
+                                        <span className="text-sm font-medium text-[#1F2933]/70">Generate Visual Progress Guide</span>
+                                      </>
                                     )}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Full Width Sections Below */}
-                              <div>
-                            {/* Caution */}
-                            {paintingGuide.coachPlan[currentTipPage].common_mistakes && (
-                              <div className="mb-4">
-                                <div className="p-3 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
-                                  <h4 className="text-sm font-bold text-red-900 mb-2 flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                                    </svg>
-                                    Caution
-                                  </h4>
-                                  <p className="text-sm text-red-800 leading-relaxed">
-                                    {paintingGuide.coachPlan[currentTipPage].common_mistakes}
-                                  </p>
-                                </div>
+                                  </button>
+                                )}
                               </div>
-                            )}
 
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -2539,6 +2653,100 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                 className="px-6 py-2.5 rounded-lg font-semibold text-[#1F2933] bg-green-600 hover:bg-green-700 transition-all shadow-sm"
               >
                 Yes, I'm Done!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Progress Images Modal */}
+      {showProgressModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowProgressModal(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-[#1F2933]">My Progress</h3>
+              <button
+                onClick={() => setShowProgressModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+              {progressImages.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 mx-auto">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-600 mb-4">No progress photos yet</p>
+                  <button
+                    onClick={() => progressFileInputRef.current?.click()}
+                    className="px-4 py-2 bg-[#2563EB] text-white rounded-lg font-medium hover:bg-[#1D4ED8] transition-colors"
+                  >
+                    Upload Your First Photo
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {progressImages.map((img, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={img}
+                          alt={`Progress ${index + 1}`}
+                          className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                          onClick={() => {
+                            setZoomedImageUrl(img);
+                            setShowImageZoom(true);
+                          }}
+                        />
+                        <button
+                          onClick={() => handleDeleteProgressImage(index)}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                          title="Delete this photo"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                          Photo {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+              <button
+                onClick={() => progressFileInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 text-[#2563EB] hover:bg-[#2563EB]/10 rounded-lg font-medium transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add Photo
+              </button>
+              <button
+                onClick={() => setShowProgressModal(false)}
+                className="px-6 py-2 bg-gray-100 text-[#1F2933] rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                Done
               </button>
             </div>
           </div>

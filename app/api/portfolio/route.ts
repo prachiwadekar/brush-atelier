@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Get all portfolio items for the current user
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -132,13 +132,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Get portfolio items with coaching session data
+    // Use select to avoid fetching large imageUrl fields unnecessarily in the query
     const portfolioItems = await prisma.portfolioItem.findMany({
       where: {
         studentProfile: {
           userId: session.user.id,
         },
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        imageUrl: true,
+        createdAt: true,
+        updatedAt: true,
+        coachingSessionId: true,
         coachingSession: {
           select: {
             sessionId: true,
@@ -157,37 +165,22 @@ export async function GET(request: NextRequest) {
     });
 
     // Format the response to match the expected structure
-    const formattedItems = portfolioItems.map(item => {
-      console.log('Portfolio item:', {
-        id: item.id,
-        title: item.title,
-        hasCoachingSession: !!item.coachingSession,
-        coachingSessionId: item.coachingSessionId,
-        sessionData: item.coachingSession ? {
-          sessionId: item.coachingSession.sessionId,
-          artworkStatus: item.coachingSession.artworkStatus,
-          medium: item.coachingSession.medium
-        } : null
-      });
-
-      return {
-        ...item,
-        sessionId: item.coachingSession?.sessionId,
-        sessionMedium: item.coachingSession?.medium,
-        artworkStatus: item.coachingSession?.artworkStatus?.toLowerCase().replace('_', '-'),
-        estimatedTime: item.coachingSession?.estimatedTime,
-        currentStep: item.coachingSession?.currentStep,
-        totalSteps: item.coachingSession?.totalSteps,
-        sessionUpdatedAt: item.coachingSession?.updatedAt,
-        coachingSession: undefined, // Remove nested object to match flat structure
-      };
-    });
-
-    console.log('Returning formatted items:', formattedItems.map(i => ({
-      id: i.id,
-      sessionId: i.sessionId,
-      artworkStatus: i.artworkStatus
-    })));
+    const formattedItems = portfolioItems.map(item => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      imageUrl: item.imageUrl,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+      coachingSessionId: item.coachingSessionId,
+      sessionId: item.coachingSession?.sessionId,
+      sessionMedium: item.coachingSession?.medium,
+      artworkStatus: item.coachingSession?.artworkStatus?.toLowerCase().replace('_', '-'),
+      estimatedTime: item.coachingSession?.estimatedTime,
+      currentStep: item.coachingSession?.currentStep,
+      totalSteps: item.coachingSession?.totalSteps,
+      sessionUpdatedAt: item.coachingSession?.updatedAt,
+    }));
 
     return NextResponse.json({ portfolioItems: formattedItems });
   } catch (error: any) {

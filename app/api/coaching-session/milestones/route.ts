@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import fs from "fs";
+import path from "path";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || "");
 
@@ -42,18 +44,39 @@ export async function POST(req: NextRequest) {
 
     // Extract base64 from the stored image URL
     const imageUrl = session.imageUrl;
-    if (!imageUrl || !imageUrl.startsWith('data:')) {
+    let mimeType: string;
+    let base64: string;
+
+    if (imageUrl.startsWith('data:')) {
+      // Parse the data URL to get base64 and mime type
+      const matches = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (!matches) {
+        return NextResponse.json({ error: "Invalid image format" }, { status: 400 });
+      }
+      mimeType = matches[1];
+      base64 = matches[2];
+    } else if (imageUrl.startsWith('/')) {
+      // Handle public file path (e.g., "/jenston.jpeg")
+      const imagePath = path.join(process.cwd(), "public", imageUrl);
+
+      if (!fs.existsSync(imagePath)) {
+        console.error(`Image not found: ${imagePath}`);
+        return NextResponse.json({ error: `Image not found: ${imageUrl}` }, { status: 404 });
+      }
+
+      const imageBuffer = fs.readFileSync(imagePath);
+      base64 = imageBuffer.toString("base64");
+
+      // Determine mime type from extension
+      const ext = path.extname(imageUrl).toLowerCase();
+      if (ext === ".png") mimeType = "image/png";
+      else if (ext === ".webp") mimeType = "image/webp";
+      else if (ext === ".gif") mimeType = "image/gif";
+      else mimeType = "image/jpeg"; // default to jpeg for .jpg, .jpeg
+    } else {
       return NextResponse.json({ error: "No valid image data found" }, { status: 400 });
     }
 
-    // Parse the data URL to get base64 and mime type
-    const matches = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
-    if (!matches) {
-      return NextResponse.json({ error: "Invalid image format" }, { status: 400 });
-    }
-
-    const mimeType = matches[1];
-    const base64 = matches[2];
     const medium = session.medium;
 
     console.log(`📸 Starting on-demand milestone generation for session ${sessionId}`);

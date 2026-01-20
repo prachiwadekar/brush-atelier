@@ -1,25 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import fs from "fs";
-import path from "path";
+import { headers } from "next/headers";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || "");
 
 // Generate milestone images on-demand
 export async function POST(req: NextRequest) {
   try {
+    // Check authentication
+    const authSession = await auth();
+    if (!authSession?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { sessionId } = await req.json();
 
     if (!sessionId) {
       return NextResponse.json({ error: "Session ID required" }, { status: 400 });
     }
 
-    // Fetch the session
+    // Fetch the session and verify ownership
     const session = await prisma.coachingSession.findUnique({
       where: { sessionId },
       select: {
         id: true,
+        userId: true,
         paintingGuide: true,
         imageUrl: true,
         imageMediaType: true,
@@ -31,7 +38,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
-    const guide = JSON.parse(session.paintingGuide);
+    // Verify user owns this session
+    if (session.userId !== authSession.user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // Safe JSON parsing
+    let guide;
+    try {
+      guide = JSON.parse(session.paintingGuide);
+    } catch {
+      return NextResponse.json({ error: "Invalid session data" }, { status: 500 });
+    }
 
     // Check if milestones already exist
     if (guide.milestoneImages?.sketch && guide.milestoneImages?.underpainting && guide.milestoneImages?.nearComplete) {
@@ -57,22 +75,35 @@ export async function POST(req: NextRequest) {
       base64 = matches[2];
     } else if (imageUrl.startsWith('/')) {
       // Handle public file path (e.g., "/jenston.jpeg")
-      const imagePath = path.join(process.cwd(), "public", imageUrl);
+      // In production (Vercel), we need to fetch via HTTP since fs is not available
+      const headersList = await headers();
+      const host = headersList.get('host') || 'localhost:3000';
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+      const fullUrl = `${protocol}://${host}${imageUrl}`;
 
-      if (!fs.existsSync(imagePath)) {
-        console.error(`Image not found: ${imagePath}`);
+      console.log(`Fetching image from: ${fullUrl}`);
+
+      const imageResponse = await fetch(fullUrl);
+      if (!imageResponse.ok) {
+        console.error(`Failed to fetch image: ${imageResponse.status}`);
         return NextResponse.json({ error: `Image not found: ${imageUrl}` }, { status: 404 });
       }
 
-      const imageBuffer = fs.readFileSync(imagePath);
-      base64 = imageBuffer.toString("base64");
+      const imageBuffer = await imageResponse.arrayBuffer();
+      base64 = Buffer.from(imageBuffer).toString("base64");
 
-      // Determine mime type from extension
-      const ext = path.extname(imageUrl).toLowerCase();
-      if (ext === ".png") mimeType = "image/png";
-      else if (ext === ".webp") mimeType = "image/webp";
-      else if (ext === ".gif") mimeType = "image/gif";
-      else mimeType = "image/jpeg"; // default to jpeg for .jpg, .jpeg
+      // Determine mime type from content-type header or extension
+      const contentType = imageResponse.headers.get('content-type');
+      if (contentType) {
+        mimeType = contentType;
+      } else {
+        // Fallback to extension-based detection
+        const ext = imageUrl.split('.').pop()?.toLowerCase() || '';
+        if (ext === "png") mimeType = "image/png";
+        else if (ext === "webp") mimeType = "image/webp";
+        else if (ext === "gif") mimeType = "image/gif";
+        else mimeType = "image/jpeg";
+      }
     } else {
       return NextResponse.json({ error: "No valid image data found" }, { status: 400 });
     }

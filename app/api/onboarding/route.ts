@@ -23,13 +23,25 @@ export async function POST(req: Request) {
     if (role === "ARTIST") {
       const spec = Array.isArray(specialization) ? specialization.join(", ") : specialization;
 
+      // Validate hourlyRate
+      const parsedHourlyRate = parseFloat(hourlyRate);
+      if (isNaN(parsedHourlyRate) || parsedHourlyRate < 0) {
+        return NextResponse.json({ error: "Invalid hourly rate" }, { status: 400 });
+      }
+
+      // Validate yearsOfExperience if provided
+      const parsedYears = yearsOfExperience ? parseInt(yearsOfExperience) : null;
+      if (yearsOfExperience && (isNaN(parsedYears!) || parsedYears! < 0)) {
+        return NextResponse.json({ error: "Invalid years of experience" }, { status: 400 });
+      }
+
       await prisma.artistProfile.create({
         data: {
           userId: session.user.id,
           bio: bio || null,
           specialization: spec,
-          hourlyRate: parseFloat(hourlyRate),
-          yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience) : null,
+          hourlyRate: parsedHourlyRate,
+          yearsOfExperience: parsedYears,
           verificationStatus: "PENDING",
           availableForMentorship: true,
         },

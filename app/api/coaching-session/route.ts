@@ -619,7 +619,13 @@ Return ONLY valid JSON, no other text.`,
         },
       });
 
-      const completeGuide = JSON.parse(coachingSession.paintingGuide);
+      // Safe JSON parsing
+      let completeGuide;
+      try {
+        completeGuide = JSON.parse(coachingSession.paintingGuide);
+      } catch {
+        return NextResponse.json({ error: "Invalid session data" }, { status: 500 });
+      }
       const coachPlan = completeGuide.coachPlan || completeGuide; // Backward compatibility
 
       // Generate coach response

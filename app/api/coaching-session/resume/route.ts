@@ -41,14 +41,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
-    // Parse the painting guide
-    const storedGuide = JSON.parse(coachingSession.paintingGuide);
-
-    console.log('=== RESUME ENDPOINT DEBUG ===');
-    console.log('storedGuide keys:', Object.keys(storedGuide));
-    console.log('storedGuide.coachPlan length:', storedGuide.coachPlan?.length);
-    console.log('storedGuide.quickGuide:', storedGuide.quickGuide ? 'exists' : 'does not exist');
-    console.log('Full storedGuide:', JSON.stringify(storedGuide, null, 2));
+    // Safe JSON parsing
+    let storedGuide;
+    try {
+      storedGuide = JSON.parse(coachingSession.paintingGuide);
+    } catch {
+      return NextResponse.json({ error: "Invalid session data" }, { status: 500 });
+    }
 
     // Support both old and new format
     // New format: { coachPlan: [...], quickGuide: {...} }
@@ -61,9 +60,6 @@ export async function GET(request: NextRequest) {
       // Old format - wrap in quickGuide property
       paintingGuide = { quickGuide: storedGuide };
     }
-
-    console.log('Final paintingGuide keys:', Object.keys(paintingGuide));
-    console.log('Final paintingGuide.coachPlan length:', paintingGuide.coachPlan?.length);
 
     // Format chat history
     const chatHistory = coachingSession.chatMessages.map(msg => ({

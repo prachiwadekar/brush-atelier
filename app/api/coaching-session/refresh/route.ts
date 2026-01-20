@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -15,9 +15,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Missing session_id" }, { status: 400 });
     }
 
+    // Fetch session and verify ownership
     const coachingSession = await prisma.coachingSession.findUnique({
       where: { sessionId },
       select: {
+        userId: true,
         paintingGuide: true,
       },
     });
@@ -26,7 +28,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
-    const paintingGuide = JSON.parse(coachingSession.paintingGuide);
+    // Verify user owns this session
+    if (coachingSession.userId !== session.user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // Safe JSON parsing
+    let paintingGuide;
+    try {
+      paintingGuide = JSON.parse(coachingSession.paintingGuide);
+    } catch {
+      return NextResponse.json({ error: "Invalid session data" }, { status: 500 });
+    }
 
     return NextResponse.json({
       painting_guide: paintingGuide,

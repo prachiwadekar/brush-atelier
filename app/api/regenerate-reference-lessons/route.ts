@@ -4,8 +4,7 @@ import Groq from "groq-sdk";
 import OpenAI from "openai";
 import { prisma } from "@/lib/prisma";
 import { randomBytes } from "crypto";
-import fs from "fs";
-import path from "path";
+import { headers } from "next/headers";
 
 export const maxDuration = 300; // 5 minutes max execution time
 
@@ -361,23 +360,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No image file specified" }, { status: 400 });
     }
 
-    // Read the image from the public folder
-    const imagePath = path.join(process.cwd(), "public", imageFile);
+    // Fetch the image via HTTP (works in both dev and production/Vercel)
+    const headersList = await headers();
+    const host = headersList.get('host') || 'localhost:3000';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const fullUrl = `${protocol}://${host}/${imageFile}`;
 
-    if (!fs.existsSync(imagePath)) {
-      console.error(`Image not found: ${imagePath}`);
+    console.log(`Fetching image from: ${fullUrl}`);
+
+    const imageResponse = await fetch(fullUrl);
+    if (!imageResponse.ok) {
+      console.error(`Failed to fetch image: ${imageResponse.status}`);
       return NextResponse.json({ error: `Image not found: ${imageFile}` }, { status: 404 });
     }
 
-    const imageBuffer = fs.readFileSync(imagePath);
-    const base64 = imageBuffer.toString("base64");
+    const imageArrayBuffer = await imageResponse.arrayBuffer();
+    const base64 = Buffer.from(imageArrayBuffer).toString("base64");
 
-    // Determine mime type from extension
-    const ext = path.extname(imageFile).toLowerCase();
-    let mimeType = "image/jpeg";
-    if (ext === ".png") mimeType = "image/png";
-    else if (ext === ".webp") mimeType = "image/webp";
-    else if (ext === ".gif") mimeType = "image/gif";
+    // Determine mime type from content-type header or extension
+    const contentType = imageResponse.headers.get('content-type');
+    let mimeType: string;
+    if (contentType) {
+      mimeType = contentType;
+    } else {
+      // Fallback to extension-based detection
+      const ext = imageFile.split('.').pop()?.toLowerCase() || '';
+      if (ext === "png") mimeType = "image/png";
+      else if (ext === "webp") mimeType = "image/webp";
+      else if (ext === "gif") mimeType = "image/gif";
+      else mimeType = "image/jpeg";
+    }
 
     const imageUrl = `data:${mimeType};base64,${base64}`;
 

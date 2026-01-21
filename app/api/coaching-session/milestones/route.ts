@@ -4,11 +4,20 @@ import { auth } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { headers } from "next/headers";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || "");
-
 // Generate milestone images on-demand
 export async function POST(req: NextRequest) {
   try {
+    // Check for Google AI API key first
+    if (!process.env.GOOGLE_AI_API_KEY) {
+      console.error("❌ GOOGLE_AI_API_KEY is not configured");
+      return NextResponse.json(
+        { error: "Visual progress guide is temporarily unavailable. Please try again later." },
+        { status: 503 }
+      );
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
+
     // Check authentication
     const authSession = await auth();
     if (!authSession?.user?.id) {

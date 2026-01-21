@@ -768,30 +768,49 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
   // Generate milestone images on-demand
   const handleGenerateMilestones = async () => {
-    if (!coachingSessionId || isLoadingMilestones) return;
+    console.log('handleGenerateMilestones called', { coachingSessionId, isLoadingMilestones });
+
+    if (!coachingSessionId) {
+      console.error('Cannot generate milestones: No coaching session ID');
+      setError('Unable to generate visual progress guide. Please try refreshing the page.');
+      return;
+    }
+
+    if (isLoadingMilestones) {
+      console.log('Already loading milestones, skipping');
+      return;
+    }
 
     setIsLoadingMilestones(true);
+    setError(null);
+
     try {
+      console.log('Fetching milestones for session:', coachingSessionId);
       const response = await fetch('/api/coaching-session/milestones', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId: coachingSessionId })
       });
 
+      const data = await response.json();
+      console.log('Milestones API response:', { ok: response.ok, status: response.status, data });
+
       if (response.ok) {
-        const data = await response.json();
         // Update the painting guide with the new milestone images
         if (data.milestoneImages && paintingGuide) {
           setPaintingGuide({
             ...paintingGuide,
             milestoneImages: data.milestoneImages
           });
+          console.log('Milestone images updated successfully');
         }
       } else {
-        console.error('Failed to generate milestone images');
+        console.error('Failed to generate milestone images:', data.error);
+        setError(data.error || 'Failed to generate visual progress guide');
       }
     } catch (error) {
       console.error('Error generating milestones:', error);
+      setError('Failed to generate visual progress guide. Please try again.');
     } finally {
       setIsLoadingMilestones(false);
     }

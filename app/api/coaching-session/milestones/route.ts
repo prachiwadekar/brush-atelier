@@ -4,61 +4,51 @@ import { auth } from "@/lib/auth";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { headers } from "next/headers";
 
-// System prompt for all milestone generations
-const SYSTEM_PROMPT = `You are generating a realistic in-progress painting, not a finished artwork.
-The goal is to accurately simulate how a real artist would progress toward the final reference image over time, preserving incompleteness, imbalance, and roughness at each stage.
+// System prompt for all milestone generations - emphasizes SAME PAINTING evolving
+const SYSTEM_PROMPT = `You are generating ONE CONTINUOUS PAINTING at different stages of completion.
 
-You MUST avoid visual cues that make the image feel finished, polished, or cohesive too early.
+MOST IMPORTANT RULE - THIS IS THE SAME PAINTING EVOLVING:
+Think of this as photographing a single canvas at different points in time. The painting on the canvas doesn't change identity — it just gets more complete. If you painted the left eye blue at 20%, that same blue left eye must be there at 40%, 50%, and 75% — just more refined.
 
-CRITICAL RULE #1 - STRICT REFERENCE FIDELITY (HIGHEST PRIORITY):
-- ONLY paint what is visible in the reference image — nothing more, nothing less
-- If the reference is a close-up headshot, DO NOT add shoulders, clothing, or body parts not visible in the reference
-- If the reference shows a person from the chest up, DO NOT add a full body or clothing below what's shown
-- The COMPOSITION and FRAMING must match the reference exactly
-- DO NOT invent, imagine, or add ANY elements not present in the reference image
-- If background is plain/simple in reference, keep it plain/simple — do not add scenery, objects, or details
-- Match the exact crop and boundaries of the reference image
+RULE #1 - EXACT REFERENCE MATCH:
+- Study the reference image CAREFULLY before generating anything
+- The subject must be IDENTICAL to the reference — same person, same pose, same composition
+- If it's a portrait of a girl with brown hair and green eyes, every stage must show THAT SAME girl
+- Match: face shape, eye shape, nose shape, lip shape, hair color, skin tone, expression
+- DO NOT generate a generic or different person at any stage
 
-CRITICAL RULE #2 - CUMULATIVE PROGRESS:
-- Each stage MUST preserve ALL work from previous stages
-- If an area was painted in a previous stage, it MUST remain painted (not revert to blank/white/sketch)
-- Progress is ADDITIVE - you are building upon previous work, not starting fresh
-- If eyes were painted at 30%, they must still be painted at 50%, 75%, and 90%
-- If skin tones were established, they must remain visible in subsequent stages
-- NEVER show regression - a painted area should NEVER become unpainted
+RULE #2 - STRICT COMPOSITION FIDELITY:
+- Match the EXACT framing and crop of the reference
+- If it's a close-up headshot, DO NOT add shoulders or body
+- If background is plain, keep it plain — no invented scenery
+- The boundaries of your image must match the reference boundaries
 
-GLOBAL RULES (apply to ALL stages):
+RULE #3 - CUMULATIVE PROGRESS (CRITICAL):
+- Each stage builds DIRECTLY on the previous stage
+- Paint that was applied in an earlier stage MUST remain visible
+- Example: If you painted the hair brown at 40%, at 50% the hair is STILL brown — you don't repaint it or lose it
+- Example: If you painted the eyes at 20%, at 40% those same eyes are still there, just more refined
+- Progress is ONLY additive — areas get MORE complete, never less
+- NEVER show an area reverting to blank canvas or losing detail
 
-ABSOLUTE PROHIBITIONS (very important):
-- Do NOT add elements not in the reference (clothing, accessories, background objects, body parts)
-- Do NOT change the composition or framing from the reference
-- Do NOT globally match the reference image at any stage below 90%
-- Do NOT balance contrast across the entire image
-- Do NOT refine all objects equally
-- Do NOT resolve edges everywhere
-- Do NOT add final highlights, crisp details, or visual harmony early
-- Do NOT "cheat" by making things subtly finished
-- Do NOT lose or erase progress from earlier stages
-- Do NOT show areas reverting to blank canvas if they were previously worked on
+WHAT MAKES EACH STAGE LOOK INCOMPLETE:
+- Uneven development: some areas far ahead of others
+- Visible brushstrokes, sketch lines showing through
+- Soft/undefined edges in less-developed areas
+- Muted colors that haven't reached full saturation
+- Missing final highlights and deepest shadows`;
 
-REQUIRED CHARACTERISTICS OF ALL IN-PROGRESS WORK:
-- Exact same subject, framing, and composition as the reference
-- Uneven development (some areas far behind others)
-- Visible construction marks (sketch lines, blocky strokes, underpainting)
-- Incomplete forms
-- Awkward transitions
-- Areas that look ignored or unfinished on purpose
-- Clear preservation of all previous painting work`;
+const HARD_STOP = `
 
-const HARD_STOP = `\n\nIMPORTANT REMINDERS:
-1. ONLY include elements that exist in the reference image. If it's a headshot, don't add clothing/body. If background is plain, keep it plain.
-2. If the image looks finished, polished, or gallery-ready, it is WRONG. Err on the side of looking unfinished.
-3. NEVER show regression — if something was painted in a previous stage, it MUST remain painted. A painted eye cannot become white/blank. Painted skin cannot disappear.
-4. Progress is CUMULATIVE and ADDITIVE only.
-5. Match the EXACT framing and composition of the reference — same crop, same boundaries.`;
+FINAL CHECKLIST:
+1. Does this look like the SAME painting as the previous stage, just more complete? If no, REDO.
+2. Is the subject IDENTICAL to the reference image (same person, same features)? If no, REDO.
+3. Are all previously painted areas still painted? If any area regressed, REDO.
+4. Does the composition match the reference exactly (same crop, same framing)? If no, REDO.
+5. Does it look appropriately incomplete for this percentage? If too finished, REDO.`;
 
 // Milestone definitions with progress percentages
-// Stages: 10%, 20%, 30%, 50%, 75%, 90%
+// Stages: 10%, 20%, 40%, 50%, 75%
 const MILESTONES = [
   {
     key: "stage10",
@@ -68,32 +58,34 @@ const MILESTONES = [
 
 Reference image: provided inline
 Medium: ${medium}
-Stage: 10% — Composition Sketch (FIRST STAGE)
+Stage: 10% — Initial Sketch
 
-Generate an image that looks 10% complete. This is the starting point.
+You are creating the FIRST stage of this painting — a pencil sketch on canvas.
 
-CRITICAL - THIS MUST BE A SKETCH OF THE REFERENCE IMAGE:
-- The sketch must capture the EXACT composition and subject of the reference
-- If the reference is a portrait, sketch THAT person's face shape and proportions
-- The placement of features must match the reference (where eyes, nose, mouth are positioned)
-- This is NOT a generic sketch — it's the beginning of recreating THIS SPECIFIC reference
+WHAT TO GENERATE:
+Create a light pencil sketch that maps out the composition of the reference image.
 
-Requirements:
-- Medium: pencil only (no paint, no color)
-- White or cream canvas dominates at least 90%
-- Loose, exploratory lines capturing the reference's composition
-- Basic proportions should roughly match the reference
-- No shading, no cross-hatching
-- Objects indicated with minimal contour
-- Feels like 2–3 minutes of work
+CRITICAL - SKETCH THE ACTUAL REFERENCE:
+- This sketch must be of THE SPECIFIC subject in the reference
+- If the reference is a portrait, sketch THAT person's unique face shape and proportions
+- The placement of features (eyes, nose, mouth, hairline) must match where they appear in the reference
+- This is the foundation — all future stages will build on exactly these lines
 
-Explicitly missing:
-- Color
+VISUAL REQUIREMENTS:
+- Pencil/graphite lines only — NO color, NO paint
+- White or cream canvas visible (90%+ of the surface)
+- Light, loose sketch lines indicating major shapes and proportions
+- Key features positioned correctly relative to the reference
+- No shading, no detail — just placement and proportion
+
+THIS STAGE IS MISSING:
+- Any color
+- Any paint
+- Shading or values
+- Fine details
 - Depth
-- Detail
-- Any sense of finish
 
-This should look like planning for painting the SPECIFIC reference image, not a generic sketch.${HARD_STOP}`
+Think: "An artist just spent 3 minutes sketching out where everything goes before painting."${HARD_STOP}`
   },
   {
     key: "stage20",
@@ -103,76 +95,94 @@ This should look like planning for painting the SPECIFIC reference image, not a 
 
 Reference image: provided inline
 Medium: ${medium}
-Stage: 20% — First Wash / Underpainting (BUILDING ON 10%)
+Stage: 20% — Very Early Color (BUILDING ON THE 10% SKETCH)
 
-Generate an image that looks 20% complete, building upon the 10% sketch stage.
+You are continuing THE SAME PAINTING from the 10% stage. The sketch is still there — now we're adding the VERY FIRST hints of color.
 
-CRITICAL - REFERENCE MATCHING:
-- The composition and subject must still clearly match the reference image
-- Color washes should hint at the ACTUAL colors from the reference (skin tone direction, hair color direction, background color)
-- The underlying sketch of the reference subject must remain visible
-- This is still recognizably the beginning of painting THAT SPECIFIC reference
+CRITICAL - THIS IS BARELY STARTED:
+- The canvas should still be MOSTLY WHITE/UNPAINTED (60-70% bare canvas)
+- Only a few small areas have received any color at all
+- This looks like the artist just started adding color and stopped after 5 minutes
 
-PRESERVE FROM PREVIOUS STAGE (10%):
-- The pencil sketch lines must still be visible underneath the wash
-- The composition established in the sketch remains
+WHAT MUST BE PRESERVED FROM 10%:
+- The pencil sketch lines are still clearly visible
+- The composition and proportions established in the sketch remain unchanged
+- This is the SAME canvas, the SAME subject
 
-NEW ADDITIONS for this stage:
-- Very thin, translucent washes or stains of color OVER the sketch
-- Colors should HINT at the reference image colors (not random colors)
-- Only broad color placement — no forms
-- At least 70% of canvas still showing sketch or blank
-- Colors still inaccurate but in the right color family as the reference
-- Uneven coverage, patchy application
+WHAT TO ADD AT THIS STAGE:
+- VERY thin, watery washes in just 1-2 areas (maybe just the face area, or just the hair)
+- Colors are muted and diluted — not saturated
+- Most of the canvas is still white/cream with visible sketch lines
+- Paint coverage: only 20-30% of canvas has any color at all
+- Large areas remain completely untouched (just sketch)
 
-Explicitly missing:
-- Defined objects
-- Shadows
-- Highlights
-- Any readable realism
+VISUAL CHARACTERISTICS:
+- Dominant white/cream canvas with sketch showing
+- A few patches of pale, watery color
+- Extremely patchy — big gaps between colored areas
+- No forms, no edges, no detail anywhere
+- Looks like someone put down their brush after just starting
 
-This should feel hesitant and exploratory, with sketch visible beneath thin color washes that hint at the reference image's actual colors.${HARD_STOP}`
+THIS STAGE IS MISSING:
+- Most of the color (80% of final colors not yet applied)
+- Any form or volume
+- Any shadows or highlights
+- Any defined edges
+- Any detail whatsoever
+- Color in most areas of the canvas
+
+Think: "The artist literally just started. A few brushstrokes of pale color, mostly bare canvas."${HARD_STOP}`
   },
   {
-    key: "stage30",
-    percent: 30,
-    label: "30%",
+    key: "stage40",
+    percent: 40,
+    label: "40%",
     prompt: (medium: string) => `${SYSTEM_PROMPT}
 
 Reference image: provided inline
 Medium: ${medium}
-Stage: 30% — One Area Developing (BUILDING ON 20%)
+Stage: 40% — Building the Foundation (BUILDING ON THE 20% START)
 
-Generate an image that looks 30% complete, building upon the 20% underpainting stage.
+You are continuing THE SAME PAINTING. The early color from 20% is still there — now we're adding more coverage but it's still clearly incomplete.
 
-CRITICAL - REFERENCE MATCHING (READ CAREFULLY):
-- This MUST be recognizably the same subject as the reference image
-- If the reference is a girl's face, the 30% version must clearly be THAT SAME girl's face emerging
-- The facial structure, proportions, and features must match the reference — not a generic face
-- Study the reference image closely: same eye shape, nose shape, face shape, hair color/style
-- Even at 30%, a viewer should be able to say "yes, this is becoming the reference image"
-- DO NOT generate a generic person or a different subject
+CRITICAL - SIGNIFICANT UNPAINTED AREAS REMAIN:
+- About 40-50% of the canvas still shows bare canvas or just sketch
+- The painting is noticeably patchy and uneven
+- Some areas have color blocking, others are still white/sketch only
 
-PRESERVE FROM PREVIOUS STAGES:
-- All color washes from stage 20% must remain visible
-- Areas that received paint must still show that paint
-- The underlying sketch structure remains in unpainted areas
+WHAT MUST BE PRESERVED FROM PREVIOUS STAGES:
+- The areas that had color at 20% still have that same color (now slightly more developed)
+- The underlying sketch is still visible in unpainted areas
+- This is the SAME painting evolving — not a new painting
 
-NEW ADDITIONS for this stage:
-- ONE focal area (the most important part — usually face/eyes for portraits) is being developed
-- This focal area shows actual form and the CORRECT colors from the reference
-- The skin tone, eye color, hair color must match the reference image
-- Everything else remains at the 20% level (sketchy or lightly washed)
+WHAT TO ADD AT THIS STAGE:
+- More areas now have color blocked in (but still flat, approximate colors)
+- The focal area (usually face) is starting to get attention — basic forms emerging
+- Colors are still muted and not fully saturated
+- Background and edges of the subject may still be largely unpainted
 
-CRITICAL: The focal area must look like the beginning of the ACTUAL reference subject, not a random face.
+CRITICAL - REFERENCE MATCHING:
+- The subject must be recognizable as the same person/thing from the reference
+- Even though it's rough, the proportions and placement match the reference
 
-Explicitly missing:
-- Global coherence
-- Finished edges
-- Lighting logic
-- Detail outside the chosen focal area
+VISUAL CHARACTERISTICS:
+- 40-50% of canvas still unpainted (white/sketch visible)
+- Colors are blocked in but flat — no refined modeling yet
+- Focal area has basic form but is NOT refined
+- Large portions (background, edges, secondary areas) still bare or just sketch
+- Visible brushstrokes, rough edges everywhere
+- No highlights, minimal shadows
 
-This should feel lopsided — one area clearly more developed than the rest — but that developed area must be RECOGNIZABLY from the reference image.${HARD_STOP}`
+THIS STAGE IS MISSING:
+- Paint on 40-50% of the canvas
+- Refined forms anywhere
+- Accurate colors (still approximations)
+- Any highlights
+- Consistent shadows
+- Detail of any kind
+- Finished edges anywhere
+
+Think: "The artist has been working for a bit. Main colors blocked in patches, but half the canvas is still bare."${HARD_STOP}`
   },
   {
     key: "stage50",
@@ -182,48 +192,50 @@ This should feel lopsided — one area clearly more developed than the rest — 
 
 Reference image: provided inline
 Medium: ${medium}
-Stage: 50% — Halfway, Structurally Incomplete (BUILDING ON 30%)
+Stage: 50% — Halfway There (BUILDING ON THE 40% FOUNDATION)
 
-Generate an image that looks EXACTLY halfway done, building upon the 30% stage.
+You are continuing THE SAME PAINTING. The blocked colors from 40% are still there — now we're filling in more and developing the focal area.
 
-CRITICAL - THIS MUST LOOK MORE COMPLETE THAN 30%:
-- At 30%, only ONE focal area (like the face) was developed
-- At 50%, MULTIPLE areas must now be developed — this is MORE painted than 30%
-- The painting should have SIGNIFICANTLY more paint coverage than the 30% stage
-- If 30% had ~30% of canvas with real paint, 50% must have ~50% with real paint
-- This stage MUST appear more advanced, more developed, more painted than 30%
+CRITICAL - STILL CLEARLY INCOMPLETE:
+- About 25-35% of canvas may still show bare canvas or very rough areas
+- The painting is halfway done — noticeably more complete than 40% but clearly not finished
+- Focal area is more developed, but secondary areas are still rough
 
-CRITICAL - REFERENCE MATCHING (READ CAREFULLY):
-- This MUST be recognizably the same subject as the reference image
-- If the reference is a portrait, the 50% version must clearly be THAT SAME person
-- The facial structure, proportions, and features must match the reference — not a generic face
-- Study the reference image closely: same eye shape, nose shape, face shape, hair color/style
-- At 50%, a viewer should clearly say "yes, this is the reference image being painted"
-- DO NOT generate a generic person or a different subject
+WHAT MUST BE PRESERVED FROM PREVIOUS STAGES:
+- All colored areas from 40% are still there with the same colors
+- The subject identity remains consistent
+- This is the SAME painting — building on what was there
 
-PRESERVE AND EXPAND FROM PREVIOUS STAGES (CRITICAL):
-- The focal area developed at 30% must remain painted AND be further refined
-- If eyes were painted, they MUST still be painted AND have more detail than at 30%
-- If skin was colored, it MUST still be colored AND be more developed
-- All previous paint work is retained AND improved upon
-- DO NOT regress any area to a less-painted state
-- The 30% focal area should now look BETTER, not the same or worse
+WHAT TO ADD AT THIS STAGE:
+- Most major areas now have color (but colors still not fully accurate)
+- The focal area (face/eyes) now has actual form and modeling
+- Secondary areas (hair, background) have color but remain flat/rough
+- Some areas may still be bare canvas or very sketchy
+- Early shadows appearing in the focal area
 
-NEW ADDITIONS for this stage (MORE than 30%):
-- Expand painted areas BEYOND the single focal point from 30%
-- About HALF the canvas now has actual paint (not just wash) — more than 30%
-- Secondary areas now being developed (hair, background, clothing if visible)
-- Early shadows appearing in the developed areas
-- More accurate colors in worked areas matching the reference
-- The focal area from 30% is now more refined with better form
+CRITICAL - SAME SUBJECT, MORE COMPLETE:
+- This must still be the EXACT SAME person/subject as the reference
+- The face is now recognizable as THAT specific person
+- Hair color, eye color, skin tone — consistent with reference
 
-Still incomplete:
-- Other half of canvas still underdeveloped (wash/sketch level)
-- No highlights anywhere
-- Blurry edges everywhere
-- Flat colors in newly painted areas
+VISUAL CHARACTERISTICS:
+- 65-75% of canvas has color (25-35% still bare/rough)
+- Focal area: forms emerging, basic shadows, ~50-60% complete
+- Secondary areas: color blocked but flat, ~30-40% complete
+- Some edges still undefined, some areas still patchy
+- No highlights anywhere yet
+- Colors still somewhat muted/approximate
 
-This MUST look more complete than 30%. The key difference: 30% had ONE focal area developed, 50% has MULTIPLE areas developed with more paint coverage overall.${HARD_STOP}`
+THIS STAGE IS MISSING:
+- Full coverage (significant bare/rough areas remain)
+- Highlights (too early)
+- Refined details
+- Accurate final colors
+- Consistent edges
+- Development in secondary areas
+- Any sense of "finish"
+
+Think: "Halfway done. The face is coming together, main colors are in, but lots still rough or bare."${HARD_STOP}`
   },
   {
     key: "stage75",
@@ -233,82 +245,55 @@ This MUST look more complete than 30%. The key difference: 30% had ONE focal are
 
 Reference image: provided inline
 Medium: ${medium}
-Stage: 75% — Advanced but Clearly Unfinished (BUILDING ON 50%)
+Stage: 75% — Colors Filled In But Unfinished (BUILDING ON THE 50% PROGRESS)
 
-Generate an image that looks 75% complete, building upon the 50% stage.
+You are continuing THE SAME PAINTING. Everything from 50% is preserved — now we're filling in all the colors but the painting should still look CLEARLY UNFINISHED.
 
-CRITICAL - REFERENCE MATCHING (READ CAREFULLY):
-- This MUST be recognizably the same subject as the reference image
-- If the reference is a portrait, this must clearly be THAT SAME person at 75% completion
-- The facial structure, proportions, and features must match the reference EXACTLY
-- Study the reference image closely: same eye shape, nose shape, face shape, hair color/style
-- At 75%, the painting should be OBVIOUSLY a recreation of the reference — no ambiguity
-- DO NOT generate a generic person or a different subject
+CRITICAL - COLORS COMPLETE BUT PAINTING IS NOT:
+- NOW the entire canvas has color (no more bare canvas)
+- But it should NOT look like the finished reference — it's still rough and unrefined
+- This is 75% done, NOT 95% done — there's obvious work remaining
 
-PRESERVE FROM PREVIOUS STAGES (CRITICAL):
-- ALL painted areas from 50% must remain painted
-- Eyes, face, skin, hair — if painted before, they stay painted
-- Colors and forms established earlier are retained and built upon
-- NO area should look less complete than it did at 50%
-- Progress is ONLY additive — we are refining and expanding, never erasing
+WHAT MUST BE PRESERVED FROM PREVIOUS STAGES:
+- EVERYTHING painted at 50% is still here — same colors, same forms
+- The subject identity is unchanged
+- This is the SAME painting progressing
 
-NEW ADDITIONS for this stage:
-- Most of the canvas now has paint coverage
-- Shadows present and more consistent across the painting
-- Forms are readable throughout most of the image
-- Colors becoming more accurate and matching the reference
+WHAT TO ADD AT THIS STAGE:
+- All areas of the canvas now have paint coverage (no more white/bare canvas)
+- Colors are more accurate but still not at final vibrancy
+- Forms are readable throughout but edges are still soft/rough
+- Basic shadows present but not deep enough
+- NO bright highlights yet — the painting looks "flat" without that pop
 
-Still incomplete:
-- Some areas still noticeably behind the focal areas
-- Edges uneven: some sharp, most soft
-- Color mostly correct but still somewhat muted
-- No bright highlights yet
-- No deepest shadows yet
-- No fine textures
+CRITICAL - OBVIOUSLY UNFINISHED:
+- Must NOT look like the reference image — clearly still needs work
+- Colors are duller/more muted than the reference
+- Edges are softer/rougher than the reference
+- Missing the "life" and "pop" that final highlights bring
+- Details are suggested but not refined (no individual hairs, no skin texture)
+- Overall looks like it needs "one more session" to finish
 
-This should look like "almost there, but not resolved." All previously painted areas remain intact, and the subject is clearly identifiable as the reference.${HARD_STOP}`
-  },
-  {
-    key: "stage90",
-    percent: 90,
-    label: "90%",
-    prompt: (medium: string) => `${SYSTEM_PROMPT}
+VISUAL CHARACTERISTICS:
+- 100% color coverage (no bare canvas)
+- Forms readable but not crisp
+- Colors at ~70-80% of final accuracy/vibrancy
+- Soft, undefined edges throughout
+- Basic shadows but no deep darks
+- NO highlights (this is what makes it look unfinished)
+- Rough brushwork still visible
+- Details are vague/suggested, not refined
 
-Reference image: provided inline
-Medium: ${medium}
-Stage: 90% — Near Finish, Still Missing Final Pass (BUILDING ON 75%)
+THIS STAGE IS MISSING (the final 25%):
+- ALL highlights (the "pop" and "life")
+- Deep, rich shadows
+- Final color vibrancy/saturation
+- Crisp, refined edges
+- Fine details (eyelashes, hair strands, skin texture)
+- The overall "finished" look
+- Contrast and punch
 
-Generate an image that looks 90% complete, building upon the 75% stage.
-
-CRITICAL - REFERENCE MATCHING (HIGHEST PRIORITY):
-- This MUST be the same subject as the reference image — NOT a different person or object
-- If the reference is a portrait, this 90% painting must be THAT EXACT PERSON
-- Match the reference EXACTLY: same face shape, same eye shape, same nose, same mouth, same hair
-- Study the reference carefully before generating — every feature must correspond to the reference
-- At 90%, there should be NO DOUBT this is a painting of the reference image
-- A viewer comparing the reference and this 90% image should immediately say "yes, this is the same person/subject"
-- DO NOT generate a generic or different subject — this is the MOST IMPORTANT rule
-
-PRESERVE FROM PREVIOUS STAGES (CRITICAL):
-- ALL painted areas from 75% must remain intact
-- Every element that was developed stays developed
-- The entire painting has been worked on — no blank areas
-- All facial features, skin tones, hair, clothing etc. that were painted remain painted
-
-NEW ADDITIONS for this stage:
-- Overall image closely matches the reference (same subject, same features, same colors)
-- Highlights now present (but still restrained)
-- Shadows deepened
-- Colors at near-final vibrancy matching the reference
-- Most edges resolved
-
-Still missing (final 10%):
-- Final polish and refinement
-- Micro-details (eyelashes, individual hairs, texture details)
-- Perfect contrast balance
-- That last "snap" of photorealism
-
-An artist would still say: "I need one more session." But the subject is CLEARLY the same as the reference, and nothing looks unfinished or regressed from the 75% stage.${HARD_STOP}`
+Think: "All the colors are in place, but it looks flat and dull. No sparkle in the eyes, no shine on the hair. Needs highlights and refinement."${HARD_STOP}`
   }
 ];
 
@@ -383,11 +368,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid session data" }, { status: 500 });
     }
 
-    // Check if all 6 milestones already exist (new format: 10%, 20%, 30%, 50%, 75%, 90%)
+    // Check if all 5 milestones already exist (format: 10%, 20%, 40%, 50%, 75%)
     if (guide.milestoneImages?.stage10 && guide.milestoneImages?.stage20 &&
-        guide.milestoneImages?.stage30 && guide.milestoneImages?.stage50 &&
-        guide.milestoneImages?.stage75 && guide.milestoneImages?.stage90) {
-      console.log("✅ All 6 milestone images already exist, returning cached");
+        guide.milestoneImages?.stage40 && guide.milestoneImages?.stage50 &&
+        guide.milestoneImages?.stage75) {
+      console.log("✅ All 5 milestone images already exist, returning cached");
       return NextResponse.json({
         milestoneImages: guide.milestoneImages,
         cached: true
@@ -445,7 +430,7 @@ export async function POST(req: NextRequest) {
     const medium = session.medium;
 
     console.log(`📸 Starting on-demand milestone generation for session ${sessionId}`);
-    console.log(`🎨 Generating 6 milestone images at 10%, 20%, 30%, 50%, 75%, 90%`);
+    console.log(`🎨 Generating 5 milestone images at 10%, 20%, 40%, 50%, 75%`);
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
 

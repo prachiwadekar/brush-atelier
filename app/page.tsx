@@ -29,39 +29,92 @@ export default async function HomePage() {
             </h2>
 
             <p className="text-[#1F2933]/70 text-sm sm:text-base md:text-lg max-w-2xl mx-auto mb-4 sm:mb-6">
-              Paint your favorite photo, a loved one's portrait, or a memory that matters — <span className="font-semibold text-[#C2410C]">make art that's personal to you</span>
+              Paint a memory that matters — <span className="font-semibold text-[#C2410C]">make art that's personal to you</span>
             </p>
 
-            {/* Step-by-Step Visual Progression */}
-            <div className="mt-8 sm:mt-10">
-              {/* Progress Images */}
-              <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4">
-                {[1, 2, 3, 4, 5].map((step) => (
-                  <div key={step} className="relative group">
-                    <div className="relative">
-                      <Image
-                        src={`/hp${step}.png`}
-                        alt={`Painting progress step ${step}`}
-                        width={160}
-                        height={160}
-                        className="w-16 h-16 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-xl object-cover shadow-lg border-2 border-white"
-                      />
-                      <div className="absolute -bottom-2 -right-2 w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-[#2563EB] rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-md">
-                        {step}
-                      </div>
-                    </div>
-                    {step < 5 && (
-                      <div className="absolute top-1/2 -right-1.5 sm:-right-2 md:-right-3 transform -translate-y-1/2 text-[#2563EB]/60 text-xl sm:text-2xl font-bold z-10">
-                        →
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <p className="mt-6 text-[#1F2933]/70 text-sm sm:text-base font-medium">
+            {/* Step-by-Step Visual Progression - 3 Examples */}
+            <div className="mt-8 sm:mt-10 space-y-6 sm:space-y-8">
+              <p className="text-[#1F2933]/70 text-sm sm:text-base font-medium">
                 Your AI coach guides you through every brushstroke
               </p>
+
+              {/* Portrait - Top Row */}
+              <div>
+                <p className="text-xs sm:text-sm font-semibold text-[#1F2933]/50 uppercase tracking-wide mb-3">Portrait</p>
+                <div className="flex items-center justify-center gap-2 sm:gap-3 md:gap-4">
+                  {[1, 2, 3, 4].map((step) => (
+                    <div key={step} className="relative group">
+                      <div className="relative">
+                        <Image
+                          src={`/p${step}.png`}
+                          alt={`Portrait progress step ${step}`}
+                          width={160}
+                          height={160}
+                          className="w-14 h-14 sm:w-20 sm:h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 rounded-xl object-cover shadow-lg border-2 border-white"
+                        />
+                      </div>
+                      {step < 4 && (
+                        <div className="absolute top-1/2 -right-1 sm:-right-1.5 md:-right-2.5 transform -translate-y-1/2 text-[#2563EB]/40 text-lg sm:text-xl font-bold z-10">
+                          →
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Still Life & Landscape - Second Row Side by Side */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 md:gap-12">
+                {/* Still Life */}
+                <div>
+                  <p className="text-xs sm:text-sm font-semibold text-[#1F2933]/50 uppercase tracking-wide mb-3 text-center">Still Life</p>
+                  <div className="flex items-center justify-center gap-1.5 sm:gap-2 md:gap-3">
+                    {[1, 2, 3, 4].map((step) => (
+                      <div key={step} className="relative group">
+                        <div className="relative">
+                          <Image
+                            src={`/bb${step}.png`}
+                            alt={`Still life progress step ${step}`}
+                            width={120}
+                            height={120}
+                            className="w-12 h-12 sm:w-14 sm:h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-lg object-cover shadow-md border-2 border-white"
+                          />
+                        </div>
+                        {step < 4 && (
+                          <div className="absolute top-1/2 -right-0.5 sm:-right-1 md:-right-2 transform -translate-y-1/2 text-[#2563EB]/40 text-sm sm:text-base font-bold z-10">
+                            →
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Landscape */}
+                <div>
+                  <p className="text-xs sm:text-sm font-semibold text-[#1F2933]/50 uppercase tracking-wide mb-3 text-center">Landscape</p>
+                  <div className="flex items-center justify-center gap-1.5 sm:gap-2 md:gap-3">
+                    {[1, 2, 3, 4].map((step) => (
+                      <div key={step} className="relative group">
+                        <div className="relative">
+                          <Image
+                            src={`/ls${step}.png`}
+                            alt={`Landscape progress step ${step}`}
+                            width={120}
+                            height={120}
+                            className="w-12 h-12 sm:w-14 sm:h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-lg object-cover shadow-md border-2 border-white"
+                          />
+                        </div>
+                        {step < 4 && (
+                          <div className="absolute top-1/2 -right-0.5 sm:-right-1 md:-right-2 transform -translate-y-1/2 text-[#2563EB]/40 text-sm sm:text-base font-bold z-10">
+                            →
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -80,7 +133,7 @@ export default async function HomePage() {
                     Get paid helping others improve their art.
                   </h3>
                   <p className="text-black text-sm sm:text-base">
-                    For professional artists — Sign up for Critiques
+                    For professional artists — Sign up to Critique
                   </p>
                 </div>
                 <Link

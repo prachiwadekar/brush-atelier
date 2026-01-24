@@ -2310,7 +2310,9 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
 
                                 {/* Recommended Tool and Save Progress - Same row */}
                                 <div className="flex items-center justify-between mt-3">
-                                  {paintingGuide.coachPlan[currentTipPage].recommended_brush && (
+                                  {paintingGuide.coachPlan[currentTipPage].recommended_brush &&
+                                   !paintingGuide.coachPlan[currentTipPage].recommended_brush.toLowerCase().includes('none') &&
+                                   !paintingGuide.coachPlan[currentTipPage].recommended_brush.toLowerCase().includes('observation only') && (
                                     <p className="text-base text-[#1F2933] leading-relaxed">
                                       <span className="font-semibold text-green-800">Recommended Tool: </span>
                                       {paintingGuide.coachPlan[currentTipPage].recommended_brush}
@@ -2377,10 +2379,9 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                         {[
                                           { key: 'stage10', label: '10%', desc: 'Sketch' },
                                           { key: 'stage20', label: '20%', desc: 'Underpainting' },
-                                          { key: 'stage30', label: '30%', desc: 'Developing' },
+                                          { key: 'stage40', label: '40%', desc: 'Developing' },
                                           { key: 'stage50', label: '50%', desc: 'Halfway' },
                                           { key: 'stage75', label: '75%', desc: 'Advanced' },
-                                          { key: 'stage90', label: '90%', desc: 'Near Finish' },
                                         ].map((milestone) => (
                                           paintingGuide.milestoneImages[milestone.key] && (
                                             <div key={milestone.key} className="flex-shrink-0 flex flex-col" style={{ width: '120px' }}>

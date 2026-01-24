@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { signOut } from 'next-auth/react';
 
 type HomeNavProps = {
@@ -16,9 +17,17 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
     <nav className="bg-[#FBF7F2]/95 backdrop-blur-md shadow-sm relative z-10 border-b border-[#1F2933]/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex justify-between items-center h-16 sm:h-20 gap-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Link href="/" className="relative flex-shrink-0">
-              <h1 className="text-xl sm:text-3xl font-bold">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Brush Atelier Logo"
+                width={56}
+                height={56}
+                className="w-11 h-11 sm:w-14 sm:h-14"
+                unoptimized
+              />
+              <h1 className="relative text-xl sm:text-3xl font-bold">
                 <span className="text-[#C2410C]">Brush</span>{" "}
                 <span className="text-[#1F2933]">Atelier</span>
                 {/* Beta Badge */}
@@ -27,18 +36,6 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
                 </span>
               </h1>
             </Link>
-          </div>
-
-          {/* Center message - Hidden on mobile, visible on tablet+ */}
-          <div className="hidden md:flex flex-1 justify-center">
-            <div className="bg-red-500/80 px-4 py-2 rounded-lg shadow-sm">
-              <p className="text-sm lg:text-base text-white font-bold text-center">
-                Your feedback means a lot—write to us at{' '}
-                <a href="mailto:team.brushatelier@gmail.com" className="underline hover:text-white/90 transition-colors">
-                  team.brushatelier@gmail.com
-                </a>
-              </p>
-            </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">

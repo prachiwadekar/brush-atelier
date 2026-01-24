@@ -186,6 +186,13 @@ Stage: 50% — Halfway, Structurally Incomplete (BUILDING ON 30%)
 
 Generate an image that looks EXACTLY halfway done, building upon the 30% stage.
 
+CRITICAL - THIS MUST LOOK MORE COMPLETE THAN 30%:
+- At 30%, only ONE focal area (like the face) was developed
+- At 50%, MULTIPLE areas must now be developed — this is MORE painted than 30%
+- The painting should have SIGNIFICANTLY more paint coverage than the 30% stage
+- If 30% had ~30% of canvas with real paint, 50% must have ~50% with real paint
+- This stage MUST appear more advanced, more developed, more painted than 30%
+
 CRITICAL - REFERENCE MATCHING (READ CAREFULLY):
 - This MUST be recognizably the same subject as the reference image
 - If the reference is a portrait, the 50% version must clearly be THAT SAME person
@@ -194,18 +201,21 @@ CRITICAL - REFERENCE MATCHING (READ CAREFULLY):
 - At 50%, a viewer should clearly say "yes, this is the reference image being painted"
 - DO NOT generate a generic person or a different subject
 
-PRESERVE FROM PREVIOUS STAGES (CRITICAL):
-- The focal area developed at 30% must remain painted and visible
-- If eyes were painted, they MUST still be painted (not white/blank)
-- If skin was colored, it MUST still be colored
-- All previous paint work is retained and potentially refined
+PRESERVE AND EXPAND FROM PREVIOUS STAGES (CRITICAL):
+- The focal area developed at 30% must remain painted AND be further refined
+- If eyes were painted, they MUST still be painted AND have more detail than at 30%
+- If skin was colored, it MUST still be colored AND be more developed
+- All previous paint work is retained AND improved upon
 - DO NOT regress any area to a less-painted state
+- The 30% focal area should now look BETTER, not the same or worse
 
-NEW ADDITIONS for this stage:
-- Expand painted areas beyond the single focal point
-- About half the canvas now has actual paint (not just wash)
+NEW ADDITIONS for this stage (MORE than 30%):
+- Expand painted areas BEYOND the single focal point from 30%
+- About HALF the canvas now has actual paint (not just wash) — more than 30%
+- Secondary areas now being developed (hair, background, clothing if visible)
 - Early shadows appearing in the developed areas
 - More accurate colors in worked areas matching the reference
+- The focal area from 30% is now more refined with better form
 
 Still incomplete:
 - Other half of canvas still underdeveloped (wash/sketch level)
@@ -213,7 +223,7 @@ Still incomplete:
 - Blurry edges everywhere
 - Flat colors in newly painted areas
 
-If you squint, this should NOT read as finished. But previously painted areas (like eyes, face) must remain painted, and the subject must be recognizably the SAME as the reference.${HARD_STOP}`
+This MUST look more complete than 30%. The key difference: 30% had ONE focal area developed, 50% has MULTIPLE areas developed with more paint coverage overall.${HARD_STOP}`
   },
   {
     key: "stage75",

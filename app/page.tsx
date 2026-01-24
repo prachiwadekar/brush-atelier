@@ -1,15 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { Users } from "lucide-react";
 import { HomeNav } from "@/components/home-nav";
 
 export default async function HomePage() {
   const session = await auth();
-
-  // Get artist count
-  const artistCount = await prisma.artistWaitlist.count();
 
   return (
     <div className="min-h-screen bg-[#FBF7F2] relative overflow-hidden">
@@ -122,20 +117,9 @@ export default async function HomePage() {
           <div className="mt-6 sm:mt-8">
             <div className="bg-gradient-to-br from-[#2563EB]/10 via-[#C2410C]/10 to-[#2563EB]/10 rounded-xl p-4 sm:p-5 border border-[#2563EB]/20 shadow-md">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-center sm:text-left">
-                  <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                    <Users className="h-4 w-4 text-[#2563EB]" />
-                    <span className="text-sm sm:text-base font-semibold text-[#2563EB]">
-                      {artistCount > 0 ? `${artistCount} artists` : 'Be the first'} on the waitlist
-                    </span>
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-black mb-1">
-                    Get paid helping others improve their art.
-                  </h3>
-                  <p className="text-black text-sm sm:text-base">
-                    For professional artists — Sign up to Critique
-                  </p>
-                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-black text-center sm:text-left">
+                  Critique art. Earn money.
+                </h3>
                 <Link
                   href="/artists/join"
                   className="bg-[#2563EB] text-white px-6 py-2 rounded-full hover:bg-[#1D4ED8] transition-all shadow-md hover:shadow-lg font-bold text-sm whitespace-nowrap"

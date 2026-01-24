@@ -186,6 +186,14 @@ Stage: 50% — Halfway, Structurally Incomplete (BUILDING ON 30%)
 
 Generate an image that looks EXACTLY halfway done, building upon the 30% stage.
 
+CRITICAL - REFERENCE MATCHING (READ CAREFULLY):
+- This MUST be recognizably the same subject as the reference image
+- If the reference is a portrait, the 50% version must clearly be THAT SAME person
+- The facial structure, proportions, and features must match the reference — not a generic face
+- Study the reference image closely: same eye shape, nose shape, face shape, hair color/style
+- At 50%, a viewer should clearly say "yes, this is the reference image being painted"
+- DO NOT generate a generic person or a different subject
+
 PRESERVE FROM PREVIOUS STAGES (CRITICAL):
 - The focal area developed at 30% must remain painted and visible
 - If eyes were painted, they MUST still be painted (not white/blank)
@@ -197,7 +205,7 @@ NEW ADDITIONS for this stage:
 - Expand painted areas beyond the single focal point
 - About half the canvas now has actual paint (not just wash)
 - Early shadows appearing in the developed areas
-- More accurate colors in worked areas
+- More accurate colors in worked areas matching the reference
 
 Still incomplete:
 - Other half of canvas still underdeveloped (wash/sketch level)
@@ -205,7 +213,7 @@ Still incomplete:
 - Blurry edges everywhere
 - Flat colors in newly painted areas
 
-If you squint, this should NOT read as finished. But previously painted areas (like eyes, face) must remain painted.${HARD_STOP}`
+If you squint, this should NOT read as finished. But previously painted areas (like eyes, face) must remain painted, and the subject must be recognizably the SAME as the reference.${HARD_STOP}`
   },
   {
     key: "stage75",
@@ -219,6 +227,14 @@ Stage: 75% — Advanced but Clearly Unfinished (BUILDING ON 50%)
 
 Generate an image that looks 75% complete, building upon the 50% stage.
 
+CRITICAL - REFERENCE MATCHING (READ CAREFULLY):
+- This MUST be recognizably the same subject as the reference image
+- If the reference is a portrait, this must clearly be THAT SAME person at 75% completion
+- The facial structure, proportions, and features must match the reference EXACTLY
+- Study the reference image closely: same eye shape, nose shape, face shape, hair color/style
+- At 75%, the painting should be OBVIOUSLY a recreation of the reference — no ambiguity
+- DO NOT generate a generic person or a different subject
+
 PRESERVE FROM PREVIOUS STAGES (CRITICAL):
 - ALL painted areas from 50% must remain painted
 - Eyes, face, skin, hair — if painted before, they stay painted
@@ -230,7 +246,7 @@ NEW ADDITIONS for this stage:
 - Most of the canvas now has paint coverage
 - Shadows present and more consistent across the painting
 - Forms are readable throughout most of the image
-- Colors becoming more accurate
+- Colors becoming more accurate and matching the reference
 
 Still incomplete:
 - Some areas still noticeably behind the focal areas
@@ -240,7 +256,7 @@ Still incomplete:
 - No deepest shadows yet
 - No fine textures
 
-This should look like "almost there, but not resolved." All previously painted areas remain intact.${HARD_STOP}`
+This should look like "almost there, but not resolved." All previously painted areas remain intact, and the subject is clearly identifiable as the reference.${HARD_STOP}`
   },
   {
     key: "stage90",
@@ -254,6 +270,15 @@ Stage: 90% — Near Finish, Still Missing Final Pass (BUILDING ON 75%)
 
 Generate an image that looks 90% complete, building upon the 75% stage.
 
+CRITICAL - REFERENCE MATCHING (HIGHEST PRIORITY):
+- This MUST be the same subject as the reference image — NOT a different person or object
+- If the reference is a portrait, this 90% painting must be THAT EXACT PERSON
+- Match the reference EXACTLY: same face shape, same eye shape, same nose, same mouth, same hair
+- Study the reference carefully before generating — every feature must correspond to the reference
+- At 90%, there should be NO DOUBT this is a painting of the reference image
+- A viewer comparing the reference and this 90% image should immediately say "yes, this is the same person/subject"
+- DO NOT generate a generic or different subject — this is the MOST IMPORTANT rule
+
 PRESERVE FROM PREVIOUS STAGES (CRITICAL):
 - ALL painted areas from 75% must remain intact
 - Every element that was developed stays developed
@@ -261,10 +286,10 @@ PRESERVE FROM PREVIOUS STAGES (CRITICAL):
 - All facial features, skin tones, hair, clothing etc. that were painted remain painted
 
 NEW ADDITIONS for this stage:
-- Overall image closely resembles reference
+- Overall image closely matches the reference (same subject, same features, same colors)
 - Highlights now present (but still restrained)
 - Shadows deepened
-- Colors at near-final vibrancy
+- Colors at near-final vibrancy matching the reference
 - Most edges resolved
 
 Still missing (final 10%):
@@ -273,7 +298,7 @@ Still missing (final 10%):
 - Perfect contrast balance
 - That last "snap" of photorealism
 
-An artist would still say: "I need one more session." But nothing looks unfinished or regressed from the 75% stage.${HARD_STOP}`
+An artist would still say: "I need one more session." But the subject is CLEARLY the same as the reference, and nothing looks unfinished or regressed from the 75% stage.${HARD_STOP}`
   }
 ];
 

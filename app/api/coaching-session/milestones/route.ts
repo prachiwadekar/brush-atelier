@@ -72,11 +72,17 @@ Stage: 10% — Composition Sketch (FIRST STAGE)
 
 Generate an image that looks 10% complete. This is the starting point.
 
+CRITICAL - THIS MUST BE A SKETCH OF THE REFERENCE IMAGE:
+- The sketch must capture the EXACT composition and subject of the reference
+- If the reference is a portrait, sketch THAT person's face shape and proportions
+- The placement of features must match the reference (where eyes, nose, mouth are positioned)
+- This is NOT a generic sketch — it's the beginning of recreating THIS SPECIFIC reference
+
 Requirements:
 - Medium: pencil only (no paint, no color)
 - White or cream canvas dominates at least 90%
-- Loose, exploratory lines
-- Incorrect proportions allowed
+- Loose, exploratory lines capturing the reference's composition
+- Basic proportions should roughly match the reference
 - No shading, no cross-hatching
 - Objects indicated with minimal contour
 - Feels like 2–3 minutes of work
@@ -87,7 +93,7 @@ Explicitly missing:
 - Detail
 - Any sense of finish
 
-This should look like planning, not painting.${HARD_STOP}`
+This should look like planning for painting the SPECIFIC reference image, not a generic sketch.${HARD_STOP}`
   },
   {
     key: "stage20",
@@ -101,15 +107,22 @@ Stage: 20% — First Wash / Underpainting (BUILDING ON 10%)
 
 Generate an image that looks 20% complete, building upon the 10% sketch stage.
 
+CRITICAL - REFERENCE MATCHING:
+- The composition and subject must still clearly match the reference image
+- Color washes should hint at the ACTUAL colors from the reference (skin tone direction, hair color direction, background color)
+- The underlying sketch of the reference subject must remain visible
+- This is still recognizably the beginning of painting THAT SPECIFIC reference
+
 PRESERVE FROM PREVIOUS STAGE (10%):
 - The pencil sketch lines must still be visible underneath the wash
 - The composition established in the sketch remains
 
 NEW ADDITIONS for this stage:
 - Very thin, translucent washes or stains of color OVER the sketch
+- Colors should HINT at the reference image colors (not random colors)
 - Only broad color placement — no forms
 - At least 70% of canvas still showing sketch or blank
-- Colors inaccurate and tentative
+- Colors still inaccurate but in the right color family as the reference
 - Uneven coverage, patchy application
 
 Explicitly missing:
@@ -118,7 +131,7 @@ Explicitly missing:
 - Highlights
 - Any readable realism
 
-This should feel hesitant and exploratory, with sketch visible beneath thin color washes.${HARD_STOP}`
+This should feel hesitant and exploratory, with sketch visible beneath thin color washes that hint at the reference image's actual colors.${HARD_STOP}`
   },
   {
     key: "stage30",
@@ -132,17 +145,26 @@ Stage: 30% — One Area Developing (BUILDING ON 20%)
 
 Generate an image that looks 30% complete, building upon the 20% underpainting stage.
 
+CRITICAL - REFERENCE MATCHING (READ CAREFULLY):
+- This MUST be recognizably the same subject as the reference image
+- If the reference is a girl's face, the 30% version must clearly be THAT SAME girl's face emerging
+- The facial structure, proportions, and features must match the reference — not a generic face
+- Study the reference image closely: same eye shape, nose shape, face shape, hair color/style
+- Even at 30%, a viewer should be able to say "yes, this is becoming the reference image"
+- DO NOT generate a generic person or a different subject
+
 PRESERVE FROM PREVIOUS STAGES:
 - All color washes from stage 20% must remain visible
 - Areas that received paint must still show that paint
 - The underlying sketch structure remains in unpainted areas
 
 NEW ADDITIONS for this stage:
-- ONE focal area (e.g., face, eyes, central object) is being developed with more opaque paint
-- This focal area shows actual form and color, not just wash
+- ONE focal area (the most important part — usually face/eyes for portraits) is being developed
+- This focal area shows actual form and the CORRECT colors from the reference
+- The skin tone, eye color, hair color must match the reference image
 - Everything else remains at the 20% level (sketchy or lightly washed)
 
-CRITICAL: If the focal area includes eyes/face, the paint applied here MUST be retained in all future stages.
+CRITICAL: The focal area must look like the beginning of the ACTUAL reference subject, not a random face.
 
 Explicitly missing:
 - Global coherence
@@ -150,7 +172,7 @@ Explicitly missing:
 - Lighting logic
 - Detail outside the chosen focal area
 
-This should feel lopsided — one area clearly more developed than the rest.${HARD_STOP}`
+This should feel lopsided — one area clearly more developed than the rest — but that developed area must be RECOGNIZABLY from the reference image.${HARD_STOP}`
   },
   {
     key: "stage50",

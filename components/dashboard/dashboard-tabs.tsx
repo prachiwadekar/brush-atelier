@@ -1693,7 +1693,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 const primaryColors = getAllRequiredColors().filter((color: string) => isStandardColor(color));
                                 return primaryColors.length > 0 && (
                                   <div>
-                                    <div className="text-[10px] font-semibold text-[#1F2933]/60 mb-1 px-1">Primary Colors</div>
+                                    <div className="text-xs sm:text-sm font-semibold text-[#1F2933]/70 mb-1.5 px-1">Primary Colors</div>
                                     <div className="flex flex-wrap gap-2">
                                       {primaryColors.map((color: string, index: number) => (
                                         <button
@@ -1725,7 +1725,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                 const nonPrimaryColors = getAllRequiredColors().filter((color: string) => !isStandardColor(color));
                                 return nonPrimaryColors.length > 0 && (
                                   <div>
-                                    <div className="text-[10px] font-semibold text-[#1F2933]/60 mb-1 px-1">Additional Colors</div>
+                                    <div className="text-xs sm:text-sm font-semibold text-[#1F2933]/70 mb-1.5 px-1">Additional Colors</div>
                                     <div className="flex flex-wrap gap-2">
                                       {nonPrimaryColors.map((color: string, index: number) => (
                                         <button
@@ -2342,7 +2342,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                               <div className="mb-6">
                                 <div className="flex items-center justify-between mb-3">
                                   <h4 className="text-sm font-bold text-[#1F2933]">Visual Progress Guide</h4>
-                                  {paintingGuide.milestoneImages?.sketch && (
+                                  {(paintingGuide.milestoneImages?.stage10 || paintingGuide.milestoneImages?.sketch) && (
                                     <button
                                       onClick={() => setShowVisualProgressGuide(!showVisualProgressGuide)}
                                       className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
@@ -2351,69 +2351,183 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                     </button>
                                   )}
                                 </div>
-                                {paintingGuide.milestoneImages?.sketch ? (
+                                {/* New 6-image format (10%, 20%, 30%, 50%, 75%, 90%) */}
+                                {paintingGuide.milestoneImages?.stage10 ? (
                                   showVisualProgressGuide && (
-                                    <div className="grid grid-cols-3 gap-3">
-                                      {paintingGuide.milestoneImages.sketch && (
-                                        <div
-                                          className="bg-gray-100 border-2 border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group"
-                                          onClick={() => {
-                                            setZoomedImageUrl(paintingGuide.milestoneImages.sketch);
-                                            setShowImageZoom(true);
-                                          }}
-                                        >
-                                          <img
-                                            src={paintingGuide.milestoneImages.sketch}
-                                            alt="Sketch"
-                                            className="w-full h-auto object-cover"
-                                          />
-                                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
-                                            </svg>
+                                    <div className="relative">
+                                      {/* Left scroll button */}
+                                      <button
+                                        onClick={() => {
+                                          const container = document.getElementById('milestone-scroll-container');
+                                          if (container) container.scrollBy({ left: -120, behavior: 'smooth' });
+                                        }}
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white/90 hover:bg-white border border-gray-300 rounded-full shadow-md flex items-center justify-center transition-colors"
+                                        aria-label="Scroll left"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-600">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                                        </svg>
+                                      </button>
+                                      {/* Scrollable container */}
+                                      <div
+                                        id="milestone-scroll-container"
+                                        className="flex gap-2 overflow-x-auto scrollbar-hide px-8"
+                                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                      >
+                                        {[
+                                          { key: 'stage10', label: '10%', desc: 'Sketch' },
+                                          { key: 'stage20', label: '20%', desc: 'Underpainting' },
+                                          { key: 'stage30', label: '30%', desc: 'Developing' },
+                                          { key: 'stage50', label: '50%', desc: 'Halfway' },
+                                          { key: 'stage75', label: '75%', desc: 'Advanced' },
+                                          { key: 'stage90', label: '90%', desc: 'Near Finish' },
+                                        ].map((milestone) => (
+                                          paintingGuide.milestoneImages[milestone.key] && (
+                                            <div key={milestone.key} className="flex-shrink-0 flex flex-col" style={{ width: '120px' }}>
+                                              <div
+                                                className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group aspect-square"
+                                                onClick={() => {
+                                                  setZoomedImageUrl(paintingGuide.milestoneImages[milestone.key]);
+                                                  setShowImageZoom(true);
+                                                }}
+                                              >
+                                                <img
+                                                  src={paintingGuide.milestoneImages[milestone.key]}
+                                                  alt={milestone.desc}
+                                                  className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                                  </svg>
+                                                </div>
+                                              </div>
+                                              <span className="text-xs text-center text-gray-600 mt-1 font-medium">{milestone.label}</span>
+                                            </div>
+                                          )
+                                        ))}
+                                      </div>
+                                      {/* Right scroll button */}
+                                      <button
+                                        onClick={() => {
+                                          const container = document.getElementById('milestone-scroll-container');
+                                          if (container) container.scrollBy({ left: 120, behavior: 'smooth' });
+                                        }}
+                                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white/90 hover:bg-white border border-gray-300 rounded-full shadow-md flex items-center justify-center transition-colors"
+                                        aria-label="Scroll right"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-600">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  )
+                                ) : paintingGuide.milestoneImages?.sketch ? (
+                                  /* Legacy 3-image format (sketch, underpainting, nearComplete) */
+                                  showVisualProgressGuide && (
+                                    <div className="relative">
+                                      {/* Left scroll button */}
+                                      <button
+                                        onClick={() => {
+                                          const container = document.getElementById('milestone-scroll-container-legacy');
+                                          if (container) container.scrollBy({ left: -120, behavior: 'smooth' });
+                                        }}
+                                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white/90 hover:bg-white border border-gray-300 rounded-full shadow-md flex items-center justify-center transition-colors"
+                                        aria-label="Scroll left"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-600">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                                        </svg>
+                                      </button>
+                                      {/* Scrollable container */}
+                                      <div
+                                        id="milestone-scroll-container-legacy"
+                                        className="flex gap-2 overflow-x-auto scrollbar-hide px-8"
+                                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                      >
+                                        {paintingGuide.milestoneImages.sketch && (
+                                          <div className="flex-shrink-0 flex flex-col" style={{ width: '120px' }}>
+                                            <div
+                                              className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group aspect-square"
+                                              onClick={() => {
+                                                setZoomedImageUrl(paintingGuide.milestoneImages.sketch);
+                                                setShowImageZoom(true);
+                                              }}
+                                            >
+                                              <img
+                                                src={paintingGuide.milestoneImages.sketch}
+                                                alt="Sketch"
+                                                className="w-full h-full object-cover"
+                                              />
+                                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                                </svg>
+                                              </div>
+                                            </div>
+                                            <span className="text-xs text-center text-gray-600 mt-1 font-medium">Sketch</span>
                                           </div>
-                                        </div>
-                                      )}
-                                      {paintingGuide.milestoneImages.underpainting && (
-                                        <div
-                                          className="bg-gray-100 border-2 border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group"
-                                          onClick={() => {
-                                            setZoomedImageUrl(paintingGuide.milestoneImages.underpainting);
-                                            setShowImageZoom(true);
-                                          }}
-                                        >
-                                          <img
-                                            src={paintingGuide.milestoneImages.underpainting}
-                                            alt="Wash"
-                                            className="w-full h-auto object-cover"
-                                          />
-                                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
-                                            </svg>
+                                        )}
+                                        {paintingGuide.milestoneImages.underpainting && (
+                                          <div className="flex-shrink-0 flex flex-col" style={{ width: '120px' }}>
+                                            <div
+                                              className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group aspect-square"
+                                              onClick={() => {
+                                                setZoomedImageUrl(paintingGuide.milestoneImages.underpainting);
+                                                setShowImageZoom(true);
+                                              }}
+                                            >
+                                              <img
+                                                src={paintingGuide.milestoneImages.underpainting}
+                                                alt="Wash"
+                                                className="w-full h-full object-cover"
+                                              />
+                                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                                </svg>
+                                              </div>
+                                            </div>
+                                            <span className="text-xs text-center text-gray-600 mt-1 font-medium">Wash</span>
                                           </div>
-                                        </div>
-                                      )}
-                                      {paintingGuide.milestoneImages.nearComplete && (
-                                        <div
-                                          className="bg-gray-100 border-2 border-gray-300 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group"
-                                          onClick={() => {
-                                            setZoomedImageUrl(paintingGuide.milestoneImages.nearComplete);
-                                            setShowImageZoom(true);
-                                          }}
-                                        >
-                                          <img
-                                            src={paintingGuide.milestoneImages.nearComplete}
-                                            alt="Mid-Stage"
-                                            className="w-full h-auto object-cover"
-                                          />
-                                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
-                                            </svg>
+                                        )}
+                                        {paintingGuide.milestoneImages.nearComplete && (
+                                          <div className="flex-shrink-0 flex flex-col" style={{ width: '120px' }}>
+                                            <div
+                                              className="bg-gray-100 border border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors relative group aspect-square"
+                                              onClick={() => {
+                                                setZoomedImageUrl(paintingGuide.milestoneImages.nearComplete);
+                                                setShowImageZoom(true);
+                                              }}
+                                            >
+                                              <img
+                                                src={paintingGuide.milestoneImages.nearComplete}
+                                                alt="Mid-Stage"
+                                                className="w-full h-full object-cover"
+                                              />
+                                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                                                </svg>
+                                              </div>
+                                            </div>
+                                            <span className="text-xs text-center text-gray-600 mt-1 font-medium">Mid-Stage</span>
                                           </div>
-                                        </div>
-                                      )}
+                                        )}
+                                      </div>
+                                      {/* Right scroll button */}
+                                      <button
+                                        onClick={() => {
+                                          const container = document.getElementById('milestone-scroll-container-legacy');
+                                          if (container) container.scrollBy({ left: 120, behavior: 'smooth' });
+                                        }}
+                                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 bg-white/90 hover:bg-white border border-gray-300 rounded-full shadow-md flex items-center justify-center transition-colors"
+                                        aria-label="Scroll right"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-gray-600">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                        </svg>
+                                      </button>
                                     </div>
                                   )
                                 ) : (
@@ -2428,7 +2542,7 @@ export default function DashboardTabs({ userWithProfile, activeView, onViewChang
                                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
-                                        <span className="text-sm text-[#1F2933]/70">Generating progress images...</span>
+                                        <span className="text-sm text-[#1F2933]/70">Generating 6 progress images...</span>
                                       </>
                                     ) : (
                                       <>

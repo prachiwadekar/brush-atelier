@@ -10,7 +10,16 @@ The goal is to accurately simulate how a real artist would progress toward the f
 
 You MUST avoid visual cues that make the image feel finished, polished, or cohesive too early.
 
-CRITICAL RULE - CUMULATIVE PROGRESS (MOST IMPORTANT):
+CRITICAL RULE #1 - STRICT REFERENCE FIDELITY (HIGHEST PRIORITY):
+- ONLY paint what is visible in the reference image — nothing more, nothing less
+- If the reference is a close-up headshot, DO NOT add shoulders, clothing, or body parts not visible in the reference
+- If the reference shows a person from the chest up, DO NOT add a full body or clothing below what's shown
+- The COMPOSITION and FRAMING must match the reference exactly
+- DO NOT invent, imagine, or add ANY elements not present in the reference image
+- If background is plain/simple in reference, keep it plain/simple — do not add scenery, objects, or details
+- Match the exact crop and boundaries of the reference image
+
+CRITICAL RULE #2 - CUMULATIVE PROGRESS:
 - Each stage MUST preserve ALL work from previous stages
 - If an area was painted in a previous stage, it MUST remain painted (not revert to blank/white/sketch)
 - Progress is ADDITIVE - you are building upon previous work, not starting fresh
@@ -21,6 +30,8 @@ CRITICAL RULE - CUMULATIVE PROGRESS (MOST IMPORTANT):
 GLOBAL RULES (apply to ALL stages):
 
 ABSOLUTE PROHIBITIONS (very important):
+- Do NOT add elements not in the reference (clothing, accessories, background objects, body parts)
+- Do NOT change the composition or framing from the reference
 - Do NOT globally match the reference image at any stage below 90%
 - Do NOT balance contrast across the entire image
 - Do NOT refine all objects equally
@@ -31,6 +42,7 @@ ABSOLUTE PROHIBITIONS (very important):
 - Do NOT show areas reverting to blank canvas if they were previously worked on
 
 REQUIRED CHARACTERISTICS OF ALL IN-PROGRESS WORK:
+- Exact same subject, framing, and composition as the reference
 - Uneven development (some areas far behind others)
 - Visible construction marks (sketch lines, blocky strokes, underpainting)
 - Incomplete forms
@@ -39,9 +51,11 @@ REQUIRED CHARACTERISTICS OF ALL IN-PROGRESS WORK:
 - Clear preservation of all previous painting work`;
 
 const HARD_STOP = `\n\nIMPORTANT REMINDERS:
-1. If the image looks finished, polished, or gallery-ready, it is WRONG. Err on the side of looking unfinished.
-2. NEVER show regression — if something was painted in a previous stage, it MUST remain painted. A painted eye cannot become white/blank. Painted skin cannot disappear.
-3. Progress is CUMULATIVE and ADDITIVE only.`;
+1. ONLY include elements that exist in the reference image. If it's a headshot, don't add clothing/body. If background is plain, keep it plain.
+2. If the image looks finished, polished, or gallery-ready, it is WRONG. Err on the side of looking unfinished.
+3. NEVER show regression — if something was painted in a previous stage, it MUST remain painted. A painted eye cannot become white/blank. Painted skin cannot disappear.
+4. Progress is CUMULATIVE and ADDITIVE only.
+5. Match the EXACT framing and composition of the reference — same crop, same boundaries.`;
 
 // Milestone definitions with progress percentages
 // Stages: 10%, 20%, 30%, 50%, 75%, 90%

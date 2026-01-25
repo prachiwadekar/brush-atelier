@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
@@ -9,47 +10,80 @@ type HomeNavProps = {
 };
 
 export function HomeNav({ isAuthenticated }: HomeNavProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/', redirect: true });
   };
 
   return (
-    <nav className="bg-[#FBF7F2]/95 backdrop-blur-md shadow-sm relative z-10 border-b border-[#1F2933]/10">
+    <nav className="bg-[#FBF7F2]/95 backdrop-blur-md shadow-sm relative z-50 border-b border-[#1F2933]/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="flex justify-between items-center h-16 sm:h-20 gap-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex justify-between items-center h-12 sm:h-14 gap-4">
+          <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
               <Image
                 src="/logo.png"
                 alt="Brush Atelier Logo"
-                width={56}
-                height={56}
-                className="w-11 h-11 sm:w-14 sm:h-14"
+                width={40}
+                height={40}
+                className="w-8 h-8 sm:w-10 sm:h-10"
                 unoptimized
               />
-              <h1 className="relative text-xl sm:text-3xl font-bold">
+              <h1 className="relative text-lg sm:text-xl font-bold">
                 <span className="text-[#C2410C]">Brush</span>{" "}
                 <span className="text-[#1F2933]">Atelier</span>
                 {/* Beta Badge */}
-                <span className="absolute -top-1 sm:-top-2 -right-12 sm:-right-14 bg-white border border-[#2563EB] text-[#2563EB] text-[0.6rem] sm:text-sm font-bold px-2.5 py-1 rounded">
+                <span className="absolute -top-0.5 -right-7 sm:-right-8 bg-white border border-[#2563EB] text-[#2563EB] text-[0.45rem] sm:text-[0.5rem] font-bold px-1 py-0.5 rounded">
                   Beta
                 </span>
               </h1>
             </Link>
+            <span className="hidden md:block text-[#1F2933]/50 text-[0.65rem] ml-6">Built by artists & AI practitioners</span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Hamburger button */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-1.5 rounded-lg hover:bg-[#2563EB]/10 transition-colors"
+            aria-label="Toggle menu"
+          >
+            <svg className="w-5 h-5 text-[#1F2933]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
+
+        {/* Dropdown menu */}
+        {menuOpen && (
+          <div className="absolute right-4 sm:right-6 lg:right-12 top-10 sm:top-12 bg-white rounded-xl shadow-lg border border-[#1F2933]/10 py-1.5 min-w-[180px] z-50">
             {isAuthenticated ? (
               <>
                 <Link
                   href="/dashboard"
-                  className="bg-[#2563EB] text-white px-4 py-2 sm:px-6 sm:py-2.5 rounded-full hover:bg-[#1D4ED8] transition-all shadow-md hover:shadow-lg font-bold text-sm sm:text-base"
+                  className="block bg-[#2563EB] text-white mx-1.5 px-3 py-2 rounded-lg transition-colors font-medium hover:bg-[#1D4ED8] text-xs text-center"
+                  onClick={() => setMenuOpen(false)}
                 >
-                  My Session
+                  Continue Painting
+                </Link>
+                <div className="border-t border-[#1F2933]/10 my-1.5"></div>
+                <Link
+                  href="/artists/join"
+                  className="block text-[#1F2933] hover:text-[#2563EB] px-3 py-2 transition-colors font-medium hover:bg-[#2563EB]/5 text-xs"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Become a Coach
                 </Link>
                 <button
-                  onClick={handleSignOut}
-                  className="text-[#1F2933] hover:text-[#2563EB] px-3 py-2 sm:px-5 sm:py-2.5 transition-colors font-bold rounded-full hover:bg-[#2563EB]/10 text-sm sm:text-base"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleSignOut();
+                  }}
+                  className="block w-full text-left text-[#1F2933] hover:text-[#2563EB] px-3 py-2 transition-colors font-medium hover:bg-[#2563EB]/5 text-xs"
                 >
                   Sign Out
                 </button>
@@ -57,21 +91,23 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
             ) : (
               <>
                 <Link
-                  href="/auth/signup"
-                  className="bg-[#2563EB] text-white px-4 py-2 sm:px-6 sm:py-2.5 rounded-full hover:bg-[#1D4ED8] transition-all shadow-md hover:shadow-lg font-bold text-sm sm:text-base whitespace-nowrap"
-                >
-                  Try a Lesson
-                </Link>
-                <Link
                   href="/auth/signin"
-                  className="text-[#1F2933] hover:text-[#2563EB] px-3 py-2 sm:px-5 sm:py-2.5 transition-colors font-bold rounded-full hover:bg-[#2563EB]/10 text-sm sm:text-base"
+                  className="block text-[#1F2933] hover:text-[#2563EB] px-3 py-2 transition-colors font-medium hover:bg-[#2563EB]/5 text-xs"
+                  onClick={() => setMenuOpen(false)}
                 >
                   Sign in
+                </Link>
+                <Link
+                  href="/artists/join"
+                  className="block text-[#1F2933] hover:text-[#2563EB] px-3 py-2 transition-colors font-medium hover:bg-[#2563EB]/5 text-xs"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Become a Coach
                 </Link>
               </>
             )}
           </div>
-        </div>
+        )}
       </div>
     </nav>
   );

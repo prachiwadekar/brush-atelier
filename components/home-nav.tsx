@@ -43,7 +43,7 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
 
           {/* Centered tagline */}
           <div className="hidden md:flex flex-1 justify-center">
-            <span className="text-[#6B635A] text-xs">Built by artists & AI practitioners</span>
+            <span className="text-[#6B635A] text-sm">Built by artists & AI practitioners</span>
           </div>
 
           {/* Hamburger button */}

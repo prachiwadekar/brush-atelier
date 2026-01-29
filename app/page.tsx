@@ -39,7 +39,6 @@ export default async function HomePage() {
 
               {/* Step-by-step progression example */}
               <div>
-                <p className="text-xs sm:text-sm font-semibold text-[#7D8B73] uppercase tracking-wide mb-4">See your painting come to life</p>
                 <div className="flex items-center justify-center gap-4 sm:gap-6">
                   {[
                     { step: 1, label: "Sketch" },

@@ -37,7 +37,7 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#FBF7F2" />
+        <meta name="theme-color" content="#FAF8F5" />
         <link
           rel="preconnect"
           href="https://fonts.cdnfonts.com"

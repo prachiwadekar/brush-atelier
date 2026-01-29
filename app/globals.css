@@ -1,29 +1,91 @@
 @import "tailwindcss";
 
+/*
+ * ============================================
+ * BRUSH ATELIER DESIGN SYSTEM
+ * Pottery Studio Aesthetic
+ * ============================================
+ *
+ * Inspired by modern pottery and craft studios:
+ * warm, calm, minimal, and premium.
+ *
+ * COLOR PHILOSOPHY:
+ * - Earthy, analog, human (not techy)
+ * - Muted, desaturated tones
+ * - Warm undertones throughout
+ */
+
 :root {
-  --background: #FBF7F2;
-  --foreground: #1F2933;
-  --primary: #2563EB;
-  --primary-hover: #1D4ED8;
-  --accent: #C2410C;
-  --success: #6B8E6E;
+  /* ─── Core Colors ─── */
+  --background: #FAF8F5;          /* Warm cream - slightly warmer than before */
+  --foreground: #3D3832;          /* Warm charcoal with brown undertone */
+
+  /* ─── Primary: Muted Terracotta ─── */
+  --primary: #C4704F;             /* Muted terracotta - main CTA color */
+  --primary-hover: #A85A3D;       /* Darker terracotta for hover states */
+  --primary-light: #D4917A;       /* Lighter terracotta for subtle accents */
+
+  /* ─── Secondary: Sage Green ─── */
+  --accent: #7D8B73;              /* Sage green - secondary accent */
+  --accent-hover: #6A7862;        /* Darker sage for hover */
+  --accent-light: #9BA894;        /* Light sage for backgrounds */
+
+  /* ─── Tertiary: Clay & Lavender ─── */
+  --secondary: #B8A99A;           /* Clay beige - warm neutral */
+  --lavender: #9B8EA8;            /* Soft lavender - subtle accent */
+
+  /* ─── Neutrals ─── */
+  --muted: #E8E4DF;               /* Soft warm gray - borders, dividers */
+  --muted-foreground: #6B635A;    /* Muted text color */
+
+  /* ─── Semantic Colors ─── */
+  --success: #7D8B73;             /* Sage green for success states */
+  --warning: #C4A04F;             /* Muted gold for warnings */
+  --error: #B85C5C;               /* Muted red for errors */
+
+  /* ─── Legacy mappings (for gradual migration) ─── */
+  --brand-orange: #C2410C;        /* Keep for "Brush" in logo */
 }
 
 @theme inline {
+  /* Core */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Primary (Terracotta) */
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+
+  /* Accent (Sage) */
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-light: var(--accent-light);
+
+  /* Tertiary */
+  --color-secondary: var(--secondary);
+  --color-lavender: var(--lavender);
+
+  /* Neutrals */
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  /* Semantic */
   --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  /* Typography */
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1F2933;
-    --foreground: #FBF7F2;
+    --background: #2A2520;
+    --foreground: #F5F2EE;
+    --muted: #3D3832;
+    --muted-foreground: #A9A199;
   }
 }
 

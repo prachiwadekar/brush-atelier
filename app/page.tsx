@@ -16,7 +16,7 @@ export default async function HomePage() {
 
       <HomeNav isAuthenticated={!!session?.user} />
 
-      <main className="flex-1 flex items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-3 sm:py-4 relative z-10">
+      <main className="flex-1 flex items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-2 sm:py-3 relative z-10">
         <div className="max-w-4xl mx-auto w-full">
           {/* Hero Content */}
           <div className="text-center">
@@ -73,23 +73,23 @@ export default async function HomePage() {
       </main>
 
       {/* How It Works - 3 Steps */}
-      <div className="bg-white/50 backdrop-blur-sm border-y border-[#E8E4DF] py-5 sm:py-6">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-12">
-          <h3 className="text-base sm:text-lg font-bold text-[#3D3832] text-center mb-4">How it works</h3>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
-            <div className="flex items-center gap-2">
-              <span className="w-7 h-7 rounded-full bg-[#9B8EA8] text-white font-bold text-sm flex items-center justify-center">1</span>
-              <span className="text-[#3D3832]/80 text-sm">Upload a photo or choose a memory</span>
+      <div className="bg-white/50 backdrop-blur-sm border-y border-[#E8E4DF] py-8 sm:py-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-12">
+          <h3 className="text-lg sm:text-xl font-bold text-[#3D3832] text-center mb-6">How it works</h3>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-full bg-[#9B8EA8] text-white font-bold text-base flex items-center justify-center">1</span>
+              <span className="text-[#3D3832]/80 text-sm sm:text-base">Upload a photo or choose a memory</span>
             </div>
-            <div className="hidden sm:block text-[#B8A99A] text-lg">→</div>
-            <div className="flex items-center gap-2">
-              <span className="w-7 h-7 rounded-full bg-[#7D8B73] text-white font-bold text-sm flex items-center justify-center">2</span>
-              <span className="text-[#3D3832]/80 text-sm">Get step-by-step guidance from an AI coach</span>
+            <div className="hidden sm:block text-[#B8A99A] text-xl">→</div>
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-full bg-[#7D8B73] text-white font-bold text-base flex items-center justify-center">2</span>
+              <span className="text-[#3D3832]/80 text-sm sm:text-base">Get step-by-step guidance from an AI coach</span>
             </div>
-            <div className="hidden sm:block text-[#B8A99A] text-lg">→</div>
-            <div className="flex items-center gap-2">
-              <span className="w-7 h-7 rounded-full bg-[#C4704F] text-white font-bold text-sm flex items-center justify-center">3</span>
-              <span className="text-[#3D3832]/80 text-sm">Finish a painting you're proud of</span>
+            <div className="hidden sm:block text-[#B8A99A] text-xl">→</div>
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-full bg-[#C4704F] text-white font-bold text-base flex items-center justify-center">3</span>
+              <span className="text-[#3D3832]/80 text-sm sm:text-base">Finish a painting you're proud of</span>
             </div>
           </div>
         </div>

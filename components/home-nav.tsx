@@ -19,27 +19,31 @@ export function HomeNav({ isAuthenticated }: HomeNavProps) {
   return (
     <nav className="bg-[#FAF8F5]/95 backdrop-blur-md relative z-50 border-b border-[#E8E4DF]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="flex justify-between items-center h-12 sm:h-14 gap-4">
+        <div className="flex justify-between items-center h-14 sm:h-16 gap-4">
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
               <Image
                 src="/logo.png"
                 alt="Brush Atelier Logo"
-                width={40}
-                height={40}
-                className="w-8 h-8 sm:w-10 sm:h-10"
+                width={48}
+                height={48}
+                className="w-10 h-10 sm:w-12 sm:h-12"
                 unoptimized
               />
-              <h1 className="relative text-lg sm:text-xl font-bold">
+              <h1 className="relative text-xl sm:text-2xl font-bold">
                 <span className="text-[#C2410C]">Brush</span>{" "}
                 <span className="text-[#3D3832]">Atelier</span>
                 {/* Beta Badge */}
-                <span className="absolute -top-0.5 -right-7 sm:-right-8 bg-white border border-[#7D8B73] text-[#7D8B73] text-[0.45rem] sm:text-[0.5rem] font-bold px-1 py-0.5 rounded">
+                <span className="absolute -top-0.5 -right-8 sm:-right-9 bg-white border border-[#7D8B73] text-[#7D8B73] text-[0.5rem] sm:text-[0.55rem] font-bold px-1 py-0.5 rounded">
                   Beta
                 </span>
               </h1>
             </Link>
-            <span className="hidden md:block text-[#6B635A] text-[0.65rem] ml-6">Built by artists & AI practitioners</span>
+          </div>
+
+          {/* Centered tagline */}
+          <div className="hidden md:flex flex-1 justify-center">
+            <span className="text-[#6B635A] text-xs">Built by artists & AI practitioners</span>
           </div>
 
           {/* Hamburger button */}
